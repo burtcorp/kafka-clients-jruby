@@ -53,7 +53,7 @@ public class Producer extends RubyObject {
     RubyHash configHash = config.convertToHash();
     for (IRubyObject key : (List<IRubyObject>) configHash.keys().getList()) {
       IRubyObject value = configHash.fastARef(key);
-      if (value != null && !value.isNil()) {
+      if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
       }
     }
