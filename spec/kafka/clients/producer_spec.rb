@@ -23,13 +23,25 @@ module Kafka
           producer
         end
 
-        context 'when created with an empty config' do
+        context 'when given an empty config' do
           let :config do
             {}
           end
 
           it 'raises ConfigError' do
             expect { producer }.to raise_error(Kafka::Clients::ConfigError)
+          end
+        end
+
+        context 'when given a config with symbolic keys' do
+          it 'understands that :bootstrap_servers is an alias for bootstrap.servers' do
+            config[:bootstrap_servers] = config.delete('bootstrap.servers')
+            expect(producer.partitions_for('topictopic')).to_not be_empty
+          end
+
+          it 'allows :bootstrap_servers to be an array' do
+            config[:bootstrap_servers] = [config.delete('bootstrap.servers')] * 3
+            expect(producer.partitions_for('topictopic')).to_not be_empty
           end
         end
       end

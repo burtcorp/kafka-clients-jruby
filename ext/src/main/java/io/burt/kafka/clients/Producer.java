@@ -19,6 +19,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -48,12 +49,22 @@ public class Producer extends RubyObject {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> convertKafkaOptions(IRubyObject config) {
+  private Map<String, Object> convertKafkaOptions(ThreadContext ctx, IRubyObject config) {
     Map<String, Object> kafkaConfig = new HashMap<>();
     RubyHash configHash = config.convertToHash();
     for (IRubyObject key : (List<IRubyObject>) configHash.keys().getList()) {
       IRubyObject value = configHash.fastARef(key);
-      if (!value.isNil()) {
+      if (key instanceof RubySymbol && !value.isNil()) {
+        if (key.asJavaString().equals("bootstrap_servers")) {
+          String valueString;
+          if (value instanceof RubyArray) {
+            valueString = value.convertToArray().join(ctx, ctx.runtime.newString(",")).asJavaString();
+          } else {
+            valueString = value.asString().asJavaString();
+          }
+          kafkaConfig.put("bootstrap.servers", valueString);
+        }
+      } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
       }
     }
@@ -63,7 +74,7 @@ public class Producer extends RubyObject {
   @JRubyMethod(required = 1)
   public IRubyObject initialize(ThreadContext ctx, IRubyObject config) {
     try {
-      kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(config), new RubyObjectSerializer(), new RubyObjectSerializer());
+      kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(ctx, config), new RubyObjectSerializer(), new RubyObjectSerializer());
       return ctx.runtime.getNil();
     } catch (KafkaException ke) {
       throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
