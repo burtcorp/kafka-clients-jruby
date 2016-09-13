@@ -84,12 +84,9 @@ public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> 
         return get();
       }
     } catch (ExecutionException ee) {
-      // TODO: fix some kind of exception mapper helper thingie
-      RubyClass errorClass = (RubyClass) ctx.runtime.getClassFromPath("Kafka::Clients::KafkaError");
-      throw ctx.runtime.newRaiseException(errorClass, ee.getCause().getMessage());
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ee.getCause());
     } catch (TimeoutException te) {
-      RubyClass errorClass = (RubyClass) ctx.runtime.getClassFromPath("Kafka::Clients::TimeoutError");
-      throw ctx.runtime.newRaiseException(errorClass, te.getMessage());
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, te);
     }
   }
 }

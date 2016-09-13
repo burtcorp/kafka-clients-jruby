@@ -58,6 +58,40 @@ module Kafka
             expect(metadata.serialized_value_size).to be_a(Fixnum)
           end
         end
+
+        it 'accepts a block that will be called when the record has been saved' do
+          block_called = false
+          future = producer.send('topictopic', 'hello', 'world') do
+            block_called = true
+          end
+          future.get(timeout: 5)
+          expect(block_called).to be_truthy
+        end
+
+        it 'passes the metadata to the block' do
+          metadata = nil
+          future = producer.send('topictopic', 'hello', 'world') do |md|
+            metadata = md
+          end
+          future.get(timeout: 5)
+          expect(metadata.topic).to eq('topictopic')
+        end
+
+        context 'when an error occurs during sending' do
+          it 'returns a future that raises an error when resolved' do
+            future = producer.send('topictopic', 'hello', '!' * (1024 * 1024 + 1))
+            expect { future.get(timeout: 5) }.to raise_error(Kafka::Clients::RecordTooLargeError)
+          end
+
+          it 'yields the error to the block' do
+            yielded_error = nil
+            future = producer.send('topictopic', 'hello', '!' * (1024 * 1024 + 1)) do |_, error|
+              yielded_error = error
+            end
+            future.get(timeout: 5) rescue nil
+            expect(yielded_error).to be_a(Kafka::Clients::RecordTooLargeError)
+          end
+        end
       end
 
       describe '#flush' do

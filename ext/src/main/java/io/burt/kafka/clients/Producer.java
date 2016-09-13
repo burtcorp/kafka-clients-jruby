@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -20,6 +21,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,8 +66,7 @@ public class Producer extends RubyObject {
       kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(config), new RubyObjectSerializer(), new RubyObjectSerializer());
       return ctx.runtime.getNil();
     } catch (ConfigException ce) {
-      RubyClass errorClass = (RubyClass) ctx.runtime.getClassFromPath("Kafka::Clients::ConfigError");
-      throw ctx.runtime.newRaiseException(errorClass, ce.getMessage());
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ce);
     }
   }
 
@@ -88,10 +89,33 @@ public class Producer extends RubyObject {
   }
 
   @JRubyMethod(required = 3)
-  public IRubyObject send(final ThreadContext ctx, IRubyObject topic, IRubyObject key, IRubyObject value) {
+  public IRubyObject send(final ThreadContext ctx, IRubyObject topic, IRubyObject key, IRubyObject value, final Block block) {
     String topicName = topic.asJavaString();
     ProducerRecord<IRubyObject, IRubyObject> record = new ProducerRecord<IRubyObject, IRubyObject>(topicName, key, value);
-    Future<RecordMetadata> resultFuture = kafkaProducer.send(record);
+    Future<RecordMetadata> resultFuture;
+    if (block.isGiven()) {
+      resultFuture = kafkaProducer.send(record, new Callback() {
+        @Override
+        public void onCompletion(RecordMetadata md, Exception exception) {
+          IRubyObject error;
+          if (exception == null) {
+            error = ctx.runtime.getNil();
+          } else {
+            RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(ctx.runtime, exception);
+            error = errorClass.newInstance(ctx, ctx.runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
+          }
+          IRubyObject metadata;
+          if (md == null) {
+            metadata = ctx.runtime.getNil();
+          } else {
+            metadata = RecordMetadataWrapper.create(ctx.runtime, md);
+          }
+          block.call(ctx, metadata, error);
+        }
+      });
+    } else {
+      resultFuture = kafkaProducer.send(record);
+    }
     return FutureWrapper.create(ctx.runtime, resultFuture, new FutureWrapper.Rubifier<RecordMetadata>() {
       @Override
       public IRubyObject transform(RecordMetadata value) {
