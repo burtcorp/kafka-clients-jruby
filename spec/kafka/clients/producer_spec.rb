@@ -50,6 +50,25 @@ module Kafka
         it 'closes the producer' do
           producer.close(timeout: 5)
         end
+
+        context 'when a custom partitioner is used' do
+          let :config do
+            super().merge(partitioner: partitioner)
+          end
+
+          let :partitioner do
+            double(:partitioner)
+          end
+
+          before do
+            allow(partitioner).to receive(:close)
+          end
+
+          it 'calls #close on the partitioner', pending: 'Partitioner#close doesn\'t seem to be called by KafkaProducer' do
+            producer.close
+            expect(partitioner).to have_received(:close)
+          end
+        end
       end
 
       describe '#send' do
@@ -102,6 +121,27 @@ module Kafka
             end
             future.get(timeout: 5) rescue nil
             expect(yielded_error).to be_a(Kafka::Clients::RecordTooLargeError)
+          end
+        end
+
+        context 'when given a custom partitioner' do
+          let :config do
+            super().merge(partitioner: partitioner)
+          end
+
+          let :partitioner do
+            double(:partitioner)
+          end
+
+          before do
+            allow(partitioner).to receive(:partition).and_return(0)
+            allow(partitioner).to receive(:close)
+          end
+
+          it 'uses the partitioner when sending records' do
+            future = producer.send('topictopic', 'hello', 'world')
+            future.get(timeout: 5)
+            expect(partitioner).to have_received(:partition).with('topictopic', 'hello', 'world')
           end
         end
       end

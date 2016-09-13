@@ -63,6 +63,9 @@ public class Producer extends RubyObject {
             valueString = value.asString().asJavaString();
           }
           kafkaConfig.put("bootstrap.servers", valueString);
+        } else if (key.asJavaString().equals("partitioner")) {
+          kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
