@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.ConfigException;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
@@ -85,11 +86,16 @@ public class Producer extends RubyObject {
   }
 
   @JRubyMethod(required = 3)
-  public IRubyObject send(ThreadContext ctx, IRubyObject topic, IRubyObject key, IRubyObject value) {
+  public IRubyObject send(final ThreadContext ctx, IRubyObject topic, IRubyObject key, IRubyObject value) {
     String topicName = topic.asJavaString();
     ProducerRecord<IRubyObject, IRubyObject> record = new ProducerRecord<IRubyObject, IRubyObject>(topicName, key, value);
     Future<RecordMetadata> resultFuture = kafkaProducer.send(record);
-    return FutureWrapper.create(ctx.runtime, resultFuture);
+    return FutureWrapper.create(ctx.runtime, resultFuture, new FutureWrapper.Rubifier<RecordMetadata>() {
+      @Override
+      public IRubyObject transform(RecordMetadata value) {
+        return RecordMetadataWrapper.create(ctx.runtime, value);
+      }
+    });
   }
 
   @JRubyMethod

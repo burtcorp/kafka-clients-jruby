@@ -10,6 +10,7 @@ public class KafkaClientsLibrary implements Library {
     RubyModule kafkaClientsModule = KafkaClients.install(runtime);
     Producer.install(runtime, kafkaClientsModule);
     FutureWrapper.install(runtime, kafkaClientsModule);
+    RecordMetadataWrapper.install(runtime, kafkaClientsModule);
     installErrors(runtime, kafkaClientsModule);
   }
 

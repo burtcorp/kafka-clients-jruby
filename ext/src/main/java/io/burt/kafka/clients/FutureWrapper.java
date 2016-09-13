@@ -18,12 +18,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @SuppressWarnings("serial")
 @JRubyClass(name = "Kafka::Clients::Future")
-public class FutureWrapper<T> extends RubyObject implements Future<T> {
+public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> {
   private final Future<T> future;
+  private final Rubifier<T> rubifier;
 
-  public FutureWrapper(Ruby runtime, RubyClass metaClass, Future<T> future) {
+  public FutureWrapper(Ruby runtime, RubyClass metaClass, Future<T> future, Rubifier<T> transformer) {
     super(runtime, metaClass);
     this.future = future;
+    this.rubifier = transformer;
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
@@ -32,8 +34,12 @@ public class FutureWrapper<T> extends RubyObject implements Future<T> {
     return futureClass;
   }
 
-  static <U> FutureWrapper<U> create(Ruby runtime, Future<U> future) {
-    return new FutureWrapper<U>(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::Future"), future);
+  static <V> FutureWrapper<V> create(Ruby runtime, Future<V> future, Rubifier<V> transformer) {
+    return new FutureWrapper<V>(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::Future"), future, transformer);
+  }
+  
+  public static interface Rubifier<V> {
+    IRubyObject transform(V value);
   }
 
   @Override
@@ -52,13 +58,13 @@ public class FutureWrapper<T> extends RubyObject implements Future<T> {
   }
 
   @Override
-  public T get() throws InterruptedException, ExecutionException {
-    return future.get();
+  public IRubyObject get() throws InterruptedException, ExecutionException {
+    return rubifier.transform(future.get());
   }
 
   @Override
-  public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-    return future.get(timeout, unit);
+  public IRubyObject get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    return rubifier.transform(future.get(timeout, unit));
   }
 
   @JRubyMethod(name = "get", optional = 1)
@@ -73,11 +79,9 @@ public class FutureWrapper<T> extends RubyObject implements Future<T> {
     }
     try {
       if (timeout >= 0) {
-        get(timeout, TimeUnit.MILLISECONDS);
-        return ctx.runtime.getNil();
+        return get(timeout, TimeUnit.MILLISECONDS);
       } else {
-        get();
-        return ctx.runtime.getNil();
+        return get();
       }
     } catch (ExecutionException ee) {
       // TODO: fix some kind of exception mapper helper thingie

@@ -42,8 +42,42 @@ module Kafka
 
       describe '#send' do
         it 'sends a message to Kafka' do
-          future = producer.send('topic', 'hello', 'world')
+          future = producer.send('topictopic', 'hello', 'world')
           future.get(timeout: 5)
+        end
+
+        context 'returns a future that resolves to a record metadata object that' do
+          let :record_metadata do
+            producer.send('topictopic', 'hello', 'world').get(timeout: 5)
+          end
+
+          it 'knows the record\'s offset' do
+            expect(record_metadata.offset).to be_a(Fixnum)
+          end
+
+          it 'knows the record\'s partition' do
+            expect(record_metadata.partition).to be_a(Fixnum)
+          end
+
+          it 'knows the record\'s timestamp' do
+            expect(record_metadata.timestamp).to be_within(5).of(Time.now)
+          end
+
+          it 'knows the record\'s topic' do
+            expect(record_metadata.topic).to eq('topictopic')
+          end
+
+          it 'knows the record\'s checksum' do
+            expect(record_metadata.checksum).to be_a(Fixnum)
+          end
+
+          it 'knows the record\'s serialized key size' do
+            expect(record_metadata.serialized_key_size).to be_a(Fixnum)
+          end
+
+          it 'knows the record\'s serialize value size' do
+            expect(record_metadata.serialized_value_size).to be_a(Fixnum)
+          end
         end
       end
 
