@@ -9,9 +9,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.ConfigException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -102,5 +104,14 @@ public class Producer extends RubyObject {
   public IRubyObject flush(ThreadContext ctx) {
     kafkaProducer.flush();
     return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod(name = "partitions_for")
+  public IRubyObject partitionsFor(ThreadContext ctx, IRubyObject topic) {
+    RubyArray partitions = ctx.runtime.newArray();
+    for (PartitionInfo partition : kafkaProducer.partitionsFor(topic.asJavaString())) {
+      partitions.add(PartitionInfoWrapper.create(ctx.runtime, partition));
+    }
+    return partitions;
   }
 }

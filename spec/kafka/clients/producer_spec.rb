@@ -86,6 +86,25 @@ module Kafka
           producer.flush
         end
       end
+
+      describe '#partitions_for' do
+        it 'returns partitions for a topic' do
+          partitions = producer.partitions_for('topictopic')
+          partition = partitions.first
+          aggregate_failures do
+            expect(partition.topic).to eq('topictopic')
+            expect(partition.partition).to be_a(Fixnum)
+            expect(partition.leader.host).to be_a(String)
+            expect(partition.leader.port).to be_a(Fixnum)
+            expect(partition.leader.id).to be_a(Fixnum)
+            expect(partition.leader).to_not have_rack
+            expect(partition.leader.rack).to be_nil
+            expect(partition.leader).to_not be_empty
+            expect(partition.replicas).to include(partition.leader)
+            expect(partition.in_sync_replicas).to include(partition.leader)
+          end
+        end
+      end
     end
   end
 end
