@@ -10,8 +10,8 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.config.ConfigException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -65,8 +65,8 @@ public class Producer extends RubyObject {
     try {
       kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(config), new RubyObjectSerializer(), new RubyObjectSerializer());
       return ctx.runtime.getNil();
-    } catch (ConfigException ce) {
-      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ce);
+    } catch (KafkaException ke) {
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
     }
   }
 

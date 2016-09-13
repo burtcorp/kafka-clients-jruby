@@ -2,6 +2,7 @@ package io.burt.kafka.clients;
 
 import java.util.concurrent.TimeoutException;
 
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.RecordTooLargeException;
@@ -39,6 +40,8 @@ public class KafkaClientsLibrary implements Library {
       type = "Kafka::Clients::RecordTooLargeError";
     } else if (t instanceof ApiException) {
       type = "Kafka::Clients::ApiError";
+    } else if (t instanceof KafkaException) {
+      type = "Kafka::Clients::KafkaError";
     } else if (t instanceof TimeoutException) {
       type = "Kafka::Clients::TimeoutError";
     }
