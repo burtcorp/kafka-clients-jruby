@@ -10,7 +10,7 @@ module Kafka
       let :config do
         {
           'bootstrap.servers' => 'localhost:19091',
-          'max.block.ms' => '5000',
+          'max.block.ms' => 5000,
         }
       end
 
