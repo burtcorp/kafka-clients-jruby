@@ -1,0 +1,13 @@
+/.bundle
+/.ruby-version
+/.yardoc
+/doc
+/vendor
+/Gemfile.lock
+/ext/target
+/ext/.classpath
+/ext/.project
+/ext/.settings
+/lib/kafka/clients/ext
+/tmp
+/pkg
