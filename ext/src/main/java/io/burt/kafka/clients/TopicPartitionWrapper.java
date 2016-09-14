@@ -46,7 +46,7 @@ public class TopicPartitionWrapper extends RubyObject {
   static TopicPartitionWrapper create(Ruby runtime, TopicPartition topicPartition) {
     return new TopicPartitionWrapper(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::TopicPartition"), topicPartition);
   }
-  
+
   TopicPartition topicPartition() {
     return topicPartition;
   }
@@ -67,6 +67,11 @@ public class TopicPartitionWrapper extends RubyObject {
   @JRubyMethod
   public IRubyObject partition(ThreadContext ctx) {
     return partition;
+  }
+
+  @JRubyMethod
+  public IRubyObject hash(ThreadContext ctx) {
+    return ctx.runtime.newFixnum(topicPartition.hashCode());
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})

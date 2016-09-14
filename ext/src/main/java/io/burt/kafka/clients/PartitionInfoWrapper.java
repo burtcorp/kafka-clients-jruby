@@ -82,6 +82,11 @@ public class PartitionInfoWrapper extends RubyObject {
     return inSyncReplicas;
   }
 
+  @JRubyMethod
+  public IRubyObject hash(ThreadContext ctx) {
+    return ctx.runtime.newFixnum(partition.hashCode());
+  }
+
   @JRubyMethod(name = "eql?", alias = {"=="})
   public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
     if (other instanceof PartitionInfoWrapper) {

@@ -164,6 +164,11 @@ public class ClusterWrapper extends RubyObject {
     return bootstrapConfigured;
   }
 
+  @JRubyMethod
+  public IRubyObject hash(ThreadContext ctx) {
+    return ctx.runtime.newFixnum(cluster.hashCode());
+  }
+
   @JRubyMethod(name = "eql?", alias = {"=="})
   public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ClusterWrapper) {

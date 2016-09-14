@@ -88,6 +88,11 @@ public class ProducerRecordWrapper extends RubyObject {
     return this;
   }
 
+  @JRubyMethod
+  public IRubyObject hash(ThreadContext ctx) {
+    return ctx.runtime.newFixnum(record.hashCode());
+  }
+
   @JRubyMethod(name = "eql?", alias = {"=="})
   public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ProducerRecordWrapper) {

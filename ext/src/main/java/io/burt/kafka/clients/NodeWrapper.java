@@ -66,6 +66,11 @@ public class NodeWrapper extends RubyObject {
     return ctx.runtime.newFixnum(node.port());
   }
 
+  @JRubyMethod
+  public IRubyObject hash(ThreadContext ctx) {
+    return ctx.runtime.newFixnum(node.hashCode());
+  }
+
   @JRubyMethod(name = "eql?", alias = {"=="})
   public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
     if (other instanceof NodeWrapper) {
