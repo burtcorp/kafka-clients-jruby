@@ -73,7 +73,37 @@ module Kafka
 
       describe '#send' do
         it 'sends a message to Kafka' do
+          future = producer.send('topictopic', 'hello world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message with both a key and a value' do
           future = producer.send('topictopic', 'hello', 'world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message a pre-partitioned message' do
+          future = producer.send('topictopic', 0, 'hello', 'world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message with a specified timestamp (as a Time)' do
+          future = producer.send('topictopic', 0, Time.now, 'hello', 'world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message with a specified timestamp (as float)' do
+          future = producer.send('topictopic', 0, Time.now.to_f, 'hello', 'world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message with a specified timestamp (as an integer)' do
+          future = producer.send('topictopic', 0, Time.now.to_i, 'hello', 'world')
+          future.get(timeout: 5)
+        end
+
+        it 'sends a message with a pre-created ProducerRecord' do
+          future = producer.send(ProducerRecord.new('topictopic', 0, Time.now.to_i, 'hello', 'world'))
           future.get(timeout: 5)
         end
 
@@ -106,6 +136,12 @@ module Kafka
           end
           future.get(timeout: 5)
           expect(metadata.topic).to eq('topictopic')
+        end
+
+        context 'when specifying a partition that does not exist' do
+          it 'raises ArgumentError' do
+            expect { producer.send('topictopic', 99, 'hello', 'world') }.to raise_error(ArgumentError, /99 is not in the range/)
+          end
         end
 
         context 'when an error occurs during sending' do
@@ -142,6 +178,12 @@ module Kafka
             future = producer.send('topictopic', 'hello', 'world')
             future.get(timeout: 5)
             expect(partitioner).to have_received(:partition).with('topictopic', 'hello', 'world', instance_of(Cluster))
+          end
+
+          it 'does not use the partitioner when sending a pre-partitioned record' do
+            future = producer.send('topictopic', 1, 'hello', 'world')
+            future.get(timeout: 5)
+            expect(partitioner).to_not have_received(:partition)
           end
 
           it 'passes a cluster object to the partitioner' do
