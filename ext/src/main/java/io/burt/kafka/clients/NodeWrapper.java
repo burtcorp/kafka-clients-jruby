@@ -13,7 +13,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @SuppressWarnings("serial")
-@JRubyClass(name = "Kafka::Clients::NodeWrapper")
+@JRubyClass(name = "Kafka::Clients::Node")
 public class NodeWrapper extends RubyObject {
   private final Node node;
 
@@ -23,13 +23,13 @@ public class NodeWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("NodeWrapper", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    RubyClass futureClass = parentModule.defineClassUnder("Node", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
     futureClass.defineAnnotatedMethods(NodeWrapper.class);
     return futureClass;
   }
 
   static NodeWrapper create(Ruby runtime, Node node) {
-    return new NodeWrapper(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::NodeWrapper"), node);
+    return new NodeWrapper(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::Node"), node);
   }
 
   @JRubyMethod(name = "has_rack?")
