@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.kafka.common.serialization.Serializer;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RubyObjectSerializer implements Serializer<IRubyObject> {
+public class RubyStringSerializer implements Serializer<IRubyObject> {
   @Override
   public void configure(Map<String, ?> configs, boolean isKey) { }
 

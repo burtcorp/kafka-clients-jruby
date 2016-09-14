@@ -13,7 +13,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
-
+import org.apache.kafka.common.serialization.Serializer;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -78,7 +78,8 @@ public class ProducerWrapper extends RubyObject {
   @JRubyMethod(required = 1)
   public IRubyObject initialize(ThreadContext ctx, IRubyObject config) {
     try {
-      kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(ctx, config), new RubyObjectSerializer(), new RubyObjectSerializer());
+      Serializer<IRubyObject> serializer = new RubyStringSerializer();
+      kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(ctx, config), serializer, serializer);
       return this;
     } catch (KafkaException ke) {
       throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
