@@ -10,6 +10,7 @@ module Kafka
       let :config do
         {
           'bootstrap.servers' => 'localhost:19091',
+          'group.id' => sprintf('kafka-client-jruby-%d', (Time.now.to_f * 1000).to_i),
         }
       end
 
@@ -48,6 +49,33 @@ module Kafka
       describe '#close' do
         it 'closes the consumer' do
           consumer.close
+        end
+      end
+
+      describe '#subscribe' do
+        it 'subscribes the consumer to the specified topics' do
+          consumer.subscribe(%w[foo bar baz])
+        end
+      end
+
+      describe '#poll' do
+        it 'retrieves a batch of messages' do
+          consumer.subscribe(%w[foo bar])
+          records = consumer.poll(0)
+          expect(records).to_not be_nil
+        end
+
+        context 'when not given a group ID' do
+          let :config do
+            c = super()
+            c.delete('group.id')
+            c
+          end
+
+          it 'raises InvalidGroupIdError' do
+            consumer.subscribe(%w[foo bar])
+            expect { consumer.poll(0) }.to raise_error(InvalidGroupIdError)
+          end
         end
       end
     end

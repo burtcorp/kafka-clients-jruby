@@ -1,10 +1,13 @@
 package io.burt.kafka.clients;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -81,5 +84,28 @@ public class ConsumerWrapper extends RubyObject {
   public IRubyObject close(ThreadContext ctx) {
     kafkaConsumer.close();
     return ctx.runtime.getNil();
+  }
+
+  @SuppressWarnings("unchecked")
+  @JRubyMethod(required = 1)
+  public IRubyObject subscribe(ThreadContext ctx, IRubyObject topicNames) {
+    Set<String> topics = new HashSet<>();
+    RubyArray topicList = topicNames.convertToArray();
+    for (IRubyObject topic : (List<IRubyObject>) topicList.getList()) {
+      topics.add(topic.asString().asJavaString());
+    }
+    kafkaConsumer.subscribe(topics);
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject poll(ThreadContext ctx, IRubyObject timeout) {
+    try {
+      long timeoutMs = (long) timeout.convertToFloat().getDoubleValue() * 1000;
+      ConsumerRecords<IRubyObject, IRubyObject> records = kafkaConsumer.poll(timeoutMs);
+      return ConsumerRecordsWrapper.create(ctx.runtime, records);
+    } catch (KafkaException ke) {
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
+    }
   }
 }

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.ApiException;
+import org.apache.kafka.common.errors.InvalidGroupIdException;
 import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -24,6 +25,7 @@ public class KafkaClientsLibrary implements Library {
     TopicPartitionWrapper.install(runtime, kafkaClientsModule);
     ProducerRecordWrapper.install(runtime, kafkaClientsModule);
     ConsumerWrapper.install(runtime, kafkaClientsModule);
+    ConsumerRecordsWrapper.install(runtime, kafkaClientsModule);
     installErrors(runtime, kafkaClientsModule);
   }
 
@@ -33,7 +35,8 @@ public class KafkaClientsLibrary implements Library {
     RubyClass apiExceptionClass = parentModule.defineClassUnder("ApiError", kafkaErrorClass, standardErrorClass.getAllocator());
     parentModule.defineClassUnder("ConfigError", apiExceptionClass, standardErrorClass.getAllocator());
     parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("TimeoutError", kafkaErrorClass, standardErrorClass.getAllocator());
+    parentModule.defineClassUnder("InvalidGroupIdError", kafkaErrorClass, standardErrorClass.getAllocator());
+    parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
   }
 
   static RubyClass mapErrorClass(Ruby runtime, Throwable t) {
@@ -42,6 +45,8 @@ public class KafkaClientsLibrary implements Library {
       type = "Kafka::Clients::ConfigError";
     } else if (t instanceof RecordTooLargeException) {
       type = "Kafka::Clients::RecordTooLargeError";
+    } else if (t instanceof InvalidGroupIdException) {
+      type = "Kafka::Clients::InvalidGroupIdError";
     } else if (t instanceof ApiException) {
       type = "Kafka::Clients::ApiError";
     } else if (t instanceof KafkaException) {
