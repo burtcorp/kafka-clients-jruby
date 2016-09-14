@@ -1,15 +1,19 @@
 package io.burt.kafka.clients;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.Deserializer;
 
 import org.jruby.Ruby;
@@ -18,6 +22,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -89,12 +94,33 @@ public class ConsumerWrapper extends RubyObject {
   @SuppressWarnings("unchecked")
   @JRubyMethod(required = 1)
   public IRubyObject subscribe(ThreadContext ctx, IRubyObject topicNames) {
-    Set<String> topics = new HashSet<>();
-    RubyArray topicList = topicNames.convertToArray();
-    for (IRubyObject topic : (List<IRubyObject>) topicList.getList()) {
-      topics.add(topic.asString().asJavaString());
+    ConsumerRebalanceListener rebalanceListener = new ConsumerRebalanceListener() {
+      @Override
+      public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+      }
+      
+      @Override
+      public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+      }
+    };
+    if (topicNames instanceof RubyArray) { // TODO accept any Enumerable
+      Set<String> topics = new HashSet<>();
+      for (IRubyObject topic : (List<IRubyObject>) ((RubyArray) topicNames).getList()) {
+        topics.add(topic.asString().asJavaString());
+      }
+      kafkaConsumer.subscribe(topics, rebalanceListener);
+    } else if (topicNames instanceof RubyString) { // TODO can this be done by not checking the Java class?
+      Pattern topicPattern = Pattern.compile(topicNames.asJavaString());
+      kafkaConsumer.subscribe(topicPattern, rebalanceListener);
+    } else {
+      throw ctx.runtime.newTypeError(topicNames, "Enumerable of topics or topic pattern");
     }
-    kafkaConsumer.subscribe(topics);
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject unsubscribe(ThreadContext ctx) {
+    kafkaConsumer.unsubscribe();
     return ctx.runtime.getNil();
   }
 

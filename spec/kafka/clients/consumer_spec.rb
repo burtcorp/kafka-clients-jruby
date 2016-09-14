@@ -56,6 +56,17 @@ module Kafka
         it 'subscribes the consumer to the specified topics' do
           consumer.subscribe(%w[foo bar baz])
         end
+
+        it 'subscribes the consumer to all topics matching a pattern' do
+          consumer.subscribe('foo\..*')
+        end
+      end
+
+      describe '#unsubscribe' do
+        it 'unsubscribes the consumer' do
+          consumer.subscribe(%w[foo bar baz])
+          consumer.unsubscribe
+        end
       end
 
       describe '#poll' do
