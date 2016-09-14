@@ -20,6 +20,7 @@ public class KafkaClientsLibrary implements Library {
     RecordMetadataWrapper.install(runtime, kafkaClientsModule);
     PartitionInfoWrapper.install(runtime, kafkaClientsModule);
     NodeWrapper.install(runtime, kafkaClientsModule);
+    ClusterWrapper.install(runtime, kafkaClientsModule);
     installErrors(runtime, kafkaClientsModule);
   }
 

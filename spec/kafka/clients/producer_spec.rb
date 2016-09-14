@@ -141,7 +141,32 @@ module Kafka
           it 'uses the partitioner when sending records' do
             future = producer.send('topictopic', 'hello', 'world')
             future.get(timeout: 5)
-            expect(partitioner).to have_received(:partition).with('topictopic', 'hello', 'world')
+            expect(partitioner).to have_received(:partition).with('topictopic', 'hello', 'world', instance_of(Cluster))
+          end
+
+          it 'passes a cluster object to the partitioner' do
+            cluster = nil
+            allow(partitioner).to receive(:partition) do |_, _, _, c|
+              cluster = c
+              0
+            end
+            future = producer.send('topictopic', 'hello', 'world')
+            future.get(timeout: 5)
+            partitions = producer.partitions_for('topictopic')
+            partition = partitions.first
+            aggregate_failures do
+              expect(cluster.nodes).to_not be_empty
+              expect(cluster.topics).to_not be_empty
+              expect(cluster.unauthorized_topics).to be_an(Array)
+              expect(cluster.bootstrap_configured?).to_not be_nil
+              expect(cluster.node_by_id(partition.leader.id)).to eq(partition.leader)
+              expect(cluster.leader_for(partition.topic, partition.partition)).to eq(partition.leader)
+              expect(cluster.partition(partition.topic, partition.partition)).to eq(partition)
+              expect(cluster.partitions_for_topic(partition.topic)).to eq(partitions)
+              expect(cluster.available_partitions_for_topic(partition.topic)).to be_an(Array)
+              expect(cluster.partitions_for_node(partition.leader.id)).to include(partition)
+              expect(cluster.partition_count_for_topic(partition.topic)).to be_a(Fixnum)
+            end
           end
         end
       end

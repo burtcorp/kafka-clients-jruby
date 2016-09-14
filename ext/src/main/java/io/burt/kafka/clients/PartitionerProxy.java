@@ -18,7 +18,8 @@ public class PartitionerProxy implements Partitioner {
   @Override
   public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster) {
     Ruby runtime = partitioner.getRuntime();
-    IRubyObject[] args = new IRubyObject[] {runtime.newString(topic), (IRubyObject) key, (IRubyObject) value};
+    ClusterWrapper clusterWrapper = ClusterWrapper.create(runtime, cluster);
+    IRubyObject[] args = new IRubyObject[] {runtime.newString(topic), (IRubyObject) key, (IRubyObject) value, clusterWrapper};
     IRubyObject partition = partitioner.callMethod(runtime.getCurrentContext(), "partition", args);
     return (int) partition.convertToInteger().getLongValue();
   }
