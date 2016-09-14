@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
@@ -30,7 +31,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @SuppressWarnings("serial")
 @JRubyClass(name = "Kafka::Clients::Producer")
 public class ProducerWrapper extends RubyObject {
-  private KafkaProducer<IRubyObject, IRubyObject> kafkaProducer;
+  private Producer<IRubyObject, IRubyObject> kafkaProducer;
 
   public ProducerWrapper(Ruby runtime, RubyClass metaClass) {
     super(runtime, metaClass);
