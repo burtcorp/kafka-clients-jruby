@@ -21,6 +21,7 @@ public class KafkaClientsLibrary implements Library {
     PartitionInfoWrapper.install(runtime, kafkaClientsModule);
     NodeWrapper.install(runtime, kafkaClientsModule);
     ClusterWrapper.install(runtime, kafkaClientsModule);
+    TopicPartitionWrapper.install(runtime, kafkaClientsModule);
     installErrors(runtime, kafkaClientsModule);
   }
 

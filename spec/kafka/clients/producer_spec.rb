@@ -161,7 +161,8 @@ module Kafka
               expect(cluster.bootstrap_configured?).to_not be_nil
               expect(cluster.node_by_id(partition.leader.id)).to eq(partition.leader)
               expect(cluster.leader_for(partition.topic, partition.partition)).to eq(partition.leader)
-              expect(cluster.partition(partition.topic, partition.partition)).to eq(partition)
+              expect(cluster.leader_for(TopicPartition.new(partition.topic, partition.partition))).to eq(partition.leader)
+              expect(cluster.partition(TopicPartition.new(partition.topic, partition.partition))).to eq(partition)
               expect(cluster.partitions_for_topic(partition.topic)).to eq(partitions)
               expect(cluster.available_partitions_for_topic(partition.topic)).to be_an(Array)
               expect(cluster.partitions_for_node(partition.leader.id)).to include(partition)

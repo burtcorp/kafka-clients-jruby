@@ -63,19 +63,29 @@ public class ClusterWrapper extends RubyObject {
     return NodeWrapper.create(ctx.runtime, cluster.nodeById(nodeId));
   }
 
-  @JRubyMethod(name = "leader_for", required = 2)
-  public IRubyObject leaderFor(ThreadContext ctx, IRubyObject topic, IRubyObject partition) {
-    String t = topic.convertToString().asJavaString();
-    int p = (int) partition.convertToInteger().getLongValue();
-    Node leader = cluster.leaderFor(new TopicPartition(t, p));
+  private TopicPartition toTopicPartition(IRubyObject[] args) {
+    if (args.length > 1) {
+      String topic = args[0].convertToString().asJavaString();
+      int partition = (int) args[1].convertToInteger().getLongValue();
+      return new TopicPartition(topic, partition);
+    } else {
+      if (args[0] instanceof TopicPartitionWrapper) {
+        return ((TopicPartitionWrapper) args[0]).topicPartition();
+      } else {
+        throw args[0].getRuntime().newTypeError(args[0], args[0].getRuntime().getClassFromPath("Kafka::Clients::TopicPartition"));
+      }
+    }
+  }
+
+  @JRubyMethod(name = "leader_for", required = 1, optional = 1)
+  public IRubyObject leaderFor(ThreadContext ctx, IRubyObject[] args) {
+    Node leader = cluster.leaderFor(toTopicPartition(args));
     return NodeWrapper.create(ctx.runtime, leader);
   }
 
-  @JRubyMethod(required = 2)
-  public IRubyObject partition(ThreadContext ctx, IRubyObject topic, IRubyObject partition) {
-    String t = topic.convertToString().asJavaString();
-    int p = (int) partition.convertToInteger().getLongValue();
-    PartitionInfo partitionInfo = cluster.partition(new TopicPartition(t, p));
+  @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject partition(ThreadContext ctx, IRubyObject[] args) {
+    PartitionInfo partitionInfo = cluster.partition(toTopicPartition(args));
     return PartitionInfoWrapper.create(ctx.runtime, partitionInfo);
   }
 
