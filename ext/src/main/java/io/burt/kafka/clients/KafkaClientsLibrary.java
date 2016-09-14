@@ -15,7 +15,7 @@ import org.jruby.runtime.load.Library;
 public class KafkaClientsLibrary implements Library {
   public void load(Ruby runtime, boolean wrap) {
     RubyModule kafkaClientsModule = KafkaClients.install(runtime);
-    Producer.install(runtime, kafkaClientsModule);
+    ProducerWrapper.install(runtime, kafkaClientsModule);
     FutureWrapper.install(runtime, kafkaClientsModule);
     RecordMetadataWrapper.install(runtime, kafkaClientsModule);
     PartitionInfoWrapper.install(runtime, kafkaClientsModule);

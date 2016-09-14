@@ -29,22 +29,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @SuppressWarnings("serial")
 @JRubyClass(name = "Kafka::Clients::Producer")
-public class Producer extends RubyObject {
+public class ProducerWrapper extends RubyObject {
   private KafkaProducer<IRubyObject, IRubyObject> kafkaProducer;
 
-  public Producer(Ruby runtime, RubyClass metaClass) {
+  public ProducerWrapper(Ruby runtime, RubyClass metaClass) {
     super(runtime, metaClass);
   }
 
   private static class ProducerAllocator implements ObjectAllocator {
     public IRubyObject allocate(Ruby runtime, RubyClass metaClass) {
-      return new Producer(runtime, metaClass);
+      return new ProducerWrapper(runtime, metaClass);
     }
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
     RubyClass producerClass = parentModule.defineClassUnder("Producer", runtime.getObject(), new ProducerAllocator());
-    producerClass.defineAnnotatedMethods(Producer.class);
+    producerClass.defineAnnotatedMethods(ProducerWrapper.class);
     return producerClass;
   }
 
