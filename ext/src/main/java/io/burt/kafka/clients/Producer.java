@@ -112,9 +112,7 @@ public class Producer extends RubyObject {
         throw ctx.runtime.newTypeError(args[0], ctx.runtime.getClassFromPath("Kafka::Clients::ProducerRecord"));
       }
     } else {
-      ProducerRecordWrapper wrapper = ProducerRecordWrapper.create(ctx.runtime, null);
-      wrapper.initialize(ctx, args);
-      record = wrapper.producerRecord();
+      record = ProducerRecordWrapper.toProducerRecord(args);
     }
     Future<RecordMetadata> resultFuture;
     try {
