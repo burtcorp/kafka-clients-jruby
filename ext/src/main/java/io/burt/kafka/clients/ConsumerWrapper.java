@@ -91,18 +91,38 @@ public class ConsumerWrapper extends RubyObject {
     return ctx.runtime.getNil();
   }
 
-  @SuppressWarnings("unchecked")
-  @JRubyMethod(required = 1)
-  public IRubyObject subscribe(ThreadContext ctx, IRubyObject topicNames) {
-    ConsumerRebalanceListener rebalanceListener = new ConsumerRebalanceListener() {
+  private ConsumerRebalanceListener createListener(final ThreadContext ctx, final IRubyObject listener) {
+    return new ConsumerRebalanceListener() {
       @Override
       public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+        if (listener != null && listener.respondsTo("on_partitions_revoked")) {
+          RubyArray topicPartitions = ctx.runtime.newArray(partitions.size());
+          for (TopicPartition tp : partitions) {
+            topicPartitions.add(TopicPartitionWrapper.create(ctx.runtime, tp));
+          }
+          listener.callMethod(ctx, "on_partitions_revoked", topicPartitions);
+        }
       }
-      
+
       @Override
       public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+        if (listener != null && listener.respondsTo("on_partitions_assigned")) {
+          RubyArray topicPartitions = ctx.runtime.newArray(partitions.size());
+          for (TopicPartition tp : partitions) {
+            topicPartitions.add(TopicPartitionWrapper.create(ctx.runtime, tp));
+          }
+          listener.callMethod(ctx, "on_partitions_assigned", topicPartitions);
+        }
       }
     };
+  }
+
+  @SuppressWarnings("unchecked")
+  @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject subscribe(final ThreadContext ctx, IRubyObject[] args) {
+    final IRubyObject topicNames = args[0];
+    final IRubyObject listener = args.length > 1 ? args[1] : null;
+    ConsumerRebalanceListener rebalanceListener = createListener(ctx, listener);
     if (topicNames instanceof RubyArray) { // TODO accept any Enumerable
       Set<String> topics = new HashSet<>();
       for (IRubyObject topic : (List<IRubyObject>) ((RubyArray) topicNames).getList()) {
