@@ -12,6 +12,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -153,5 +154,16 @@ public class ConsumerWrapper extends RubyObject {
     } catch (KafkaException ke) {
       throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
     }
+  }
+
+  @JRubyMethod(name = "commit_sync", optional = 1)
+  public IRubyObject commitSync(ThreadContext ctx, IRubyObject[] args) {
+    if (args.length == 0) {
+      kafkaConsumer.commitSync();
+    } else {
+      Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+      kafkaConsumer.commitSync(offsets);
+    }
+    return ctx.runtime.getNil();
   }
 }

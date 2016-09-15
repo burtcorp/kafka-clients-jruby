@@ -98,6 +98,20 @@ module Kafka
           end
         end
       end
+
+      describe '#commit_sync' do
+        it 'synchronously commits the offsets received from the last call to #poll' do
+          consumer.commit_sync
+        end
+
+        it 'synchronously commits specific offsets' do
+          offsets = {
+            TopicPartition.new('foo', 2) => OffsetAndMetadata.new(12, 'hello world'),
+            TopicPartition.new('bar', 0) => OffsetAndMetadata.new(24, 'hello world'),
+          }
+          consumer.commit_sync(offsets)
+        end
+      end
     end
   end
 end
