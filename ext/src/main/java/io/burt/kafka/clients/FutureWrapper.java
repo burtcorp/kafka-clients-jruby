@@ -29,9 +29,9 @@ public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> 
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("Future", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(FutureWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("Future", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(FutureWrapper.class);
+    return cls;
   }
 
   static <V> FutureWrapper<V> create(Ruby runtime, Future<V> future, Rubifier<V> transformer) {

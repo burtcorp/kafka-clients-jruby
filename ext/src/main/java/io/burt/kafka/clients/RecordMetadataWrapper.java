@@ -23,9 +23,9 @@ public class RecordMetadataWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("RecordMetadata", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(RecordMetadataWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("RecordMetadata", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(RecordMetadataWrapper.class);
+    return cls;
   }
 
   static RecordMetadataWrapper create(Ruby runtime, RecordMetadata metadata) {

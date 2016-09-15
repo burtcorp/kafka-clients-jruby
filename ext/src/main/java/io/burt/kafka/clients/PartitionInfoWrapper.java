@@ -29,9 +29,9 @@ public class PartitionInfoWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("PartitionInfo", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(PartitionInfoWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("PartitionInfo", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(PartitionInfoWrapper.class);
+    return cls;
   }
 
   static PartitionInfoWrapper create(Ruby runtime, PartitionInfo partition) {

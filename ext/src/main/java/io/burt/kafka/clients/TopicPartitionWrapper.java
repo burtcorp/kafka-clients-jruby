@@ -38,9 +38,9 @@ public class TopicPartitionWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("TopicPartition", runtime.getObject(), new TopicPartitionWrapperAllocator());
-    futureClass.defineAnnotatedMethods(TopicPartitionWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("TopicPartition", runtime.getObject(), new TopicPartitionWrapperAllocator());
+    cls.defineAnnotatedMethods(TopicPartitionWrapper.class);
+    return cls;
   }
 
   static TopicPartitionWrapper create(Ruby runtime, TopicPartition topicPartition) {

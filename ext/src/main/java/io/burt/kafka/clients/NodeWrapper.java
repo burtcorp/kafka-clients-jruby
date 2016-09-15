@@ -23,9 +23,9 @@ public class NodeWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("Node", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(NodeWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("Node", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(NodeWrapper.class);
+    return cls;
   }
 
   static NodeWrapper create(Ruby runtime, Node node) {

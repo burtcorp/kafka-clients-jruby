@@ -32,9 +32,9 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("ProducerRecord", runtime.getObject(), new ProducerRecordWrapperAllocator());
-    futureClass.defineAnnotatedMethods(ProducerRecordWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("ProducerRecord", runtime.getObject(), new ProducerRecordWrapperAllocator());
+    cls.defineAnnotatedMethods(ProducerRecordWrapper.class);
+    return cls;
   }
 
   static ProducerRecordWrapper create(Ruby runtime, ProducerRecord<IRubyObject, IRubyObject> record) {

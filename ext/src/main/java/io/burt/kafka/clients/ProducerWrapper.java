@@ -44,9 +44,9 @@ public class ProducerWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass producerClass = parentModule.defineClassUnder("Producer", runtime.getObject(), new ProducerAllocator());
-    producerClass.defineAnnotatedMethods(ProducerWrapper.class);
-    return producerClass;
+    RubyClass cls = parentModule.defineClassUnder("Producer", runtime.getObject(), new ProducerAllocator());
+    cls.defineAnnotatedMethods(ProducerWrapper.class);
+    return cls;
   }
 
   @SuppressWarnings("unchecked")

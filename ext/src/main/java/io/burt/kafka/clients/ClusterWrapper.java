@@ -35,9 +35,9 @@ public class ClusterWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("Cluster", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(ClusterWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("Cluster", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(ClusterWrapper.class);
+    return cls;
   }
 
   static ClusterWrapper create(Ruby runtime, Cluster cluster) {

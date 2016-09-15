@@ -23,9 +23,9 @@ public class ConsumerRecordsWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass futureClass = parentModule.defineClassUnder("ConsumerRecords", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-    futureClass.defineAnnotatedMethods(ConsumerRecordsWrapper.class);
-    return futureClass;
+    RubyClass cls = parentModule.defineClassUnder("ConsumerRecords", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    cls.defineAnnotatedMethods(ConsumerRecordsWrapper.class);
+    return cls;
   }
 
   static ConsumerRecordsWrapper create(Ruby runtime, ConsumerRecords<IRubyObject, IRubyObject> records) {

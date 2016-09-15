@@ -46,9 +46,9 @@ public class ConsumerWrapper extends RubyObject {
   }
 
   static RubyClass install(Ruby runtime, RubyModule parentModule) {
-    RubyClass producerClass = parentModule.defineClassUnder("Consumer", runtime.getObject(), new ConsumerAllocator());
-    producerClass.defineAnnotatedMethods(ConsumerWrapper.class);
-    return producerClass;
+    RubyClass cls = parentModule.defineClassUnder("Consumer", runtime.getObject(), new ConsumerAllocator());
+    cls.defineAnnotatedMethods(ConsumerWrapper.class);
+    return cls;
   }
 
   @SuppressWarnings("unchecked")
