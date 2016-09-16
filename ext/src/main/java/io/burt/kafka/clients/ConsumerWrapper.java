@@ -167,4 +167,15 @@ public class ConsumerWrapper extends RubyObject {
     }
     return ctx.runtime.getNil();
   }
+
+  @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject position(ThreadContext ctx, IRubyObject[] args) {
+    TopicPartition tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
+    try {
+      long offset = kafkaConsumer.position(tp);
+      return ctx.runtime.newFixnum(offset);
+    } catch (IllegalArgumentException iae) {
+      throw ctx.runtime.newArgumentError(iae.getMessage());
+    }
+  }
 }

@@ -124,6 +124,45 @@ module Kafka
           consumer.commit_sync(offsets)
         end
       end
+
+      describe '#position' do
+        let :assigned_partitions do
+          []
+        end
+
+        before do
+          barrier = Java::JavaUtilConcurrent::Semaphore.new(0)
+          listener = double(:listener)
+          allow(listener).to receive(:on_partitions_assigned) do |topic_partitions|
+            assigned_partitions.concat(topic_partitions)
+            barrier.release
+          end
+          consumer.subscribe(%w[topictopic], listener)
+          consumer.poll(1)
+          barrier.acquire
+        end
+
+        context 'when given a topic name and partition' do
+          it 'returns the offset of the next record offset for a topic and partition' do
+            offset = consumer.position(assigned_partitions.first.topic, assigned_partitions.first.partition)
+            expect(offset).to be_a(Fixnum)
+          end
+        end
+
+        context 'when given a TopicPartition' do
+          it 'returns the offset of the next record offset for a topic and partition' do
+            offset = consumer.position(assigned_partitions.first)
+            expect(offset).to be_a(Fixnum)
+          end
+        end
+
+        context 'when given a partition not assigned to this consumer' do
+          it 'raises ArgumentError' do
+            tp = TopicPartition.new(assigned_partitions.first.topic, 99)
+            expect { consumer.position(tp) }.to raise_error(ArgumentError, /can only check the position for partitions assigned to this consumer/)
+          end
+        end
+      end
     end
   end
 end

@@ -47,6 +47,16 @@ public class TopicPartitionWrapper extends RubyObject {
     return new TopicPartitionWrapper(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::TopicPartition"), topicPartition);
   }
 
+  static TopicPartition toTopicPartition(ThreadContext ctx, IRubyObject... args) {
+    if (args.length > 1) {
+      return new TopicPartition(args[0].convertToString().asJavaString(), (int) args[1].convertToInteger().getLongValue());
+    } else if (args[0] instanceof TopicPartitionWrapper) {
+      return ((TopicPartitionWrapper) args[0]).topicPartition();
+    } else {
+      throw ctx.runtime.newTypeError(args[0], ctx.runtime.getClassFromPath("Kafka::Clients::TopicPartition"));
+    }
+  }
+
   TopicPartition topicPartition() {
     return topicPartition;
   }
@@ -55,7 +65,7 @@ public class TopicPartitionWrapper extends RubyObject {
   public IRubyObject initialize(ThreadContext ctx, IRubyObject topic, IRubyObject partition) {
     this.topic = topic;
     this.partition = partition;
-    this.topicPartition = new TopicPartition(topic.convertToString().asJavaString(), (int) partition.convertToInteger().getLongValue());
+    this.topicPartition = toTopicPartition(ctx, topic, partition);
     return this;
   }
 
