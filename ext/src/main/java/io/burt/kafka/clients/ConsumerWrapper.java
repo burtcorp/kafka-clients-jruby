@@ -124,9 +124,10 @@ public class ConsumerWrapper extends RubyObject {
     final IRubyObject topicNames = args[0];
     final IRubyObject listener = args.length > 1 ? args[1] : null;
     ConsumerRebalanceListener rebalanceListener = createListener(ctx, listener);
-    if (topicNames instanceof RubyArray) { // TODO accept any Enumerable
+    if (topicNames.respondsTo("to_a")) {
+      RubyArray topicNamesArray = topicNames.callMethod(ctx, "to_a").convertToArray();
       Set<String> topics = new HashSet<>();
-      for (IRubyObject topic : (List<IRubyObject>) ((RubyArray) topicNames).getList()) {
+      for (IRubyObject topic : (List<IRubyObject>) topicNamesArray.getList()) {
         topics.add(topic.asString().asJavaString());
       }
       kafkaConsumer.subscribe(topics, rebalanceListener);

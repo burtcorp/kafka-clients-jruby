@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+require 'set'
+
 module Kafka
   module Clients
     describe Consumer do
@@ -57,6 +59,10 @@ module Kafka
           consumer.subscribe(%w[foo bar baz])
         end
 
+        it 'subscribes the consumer to the topics in an Enumerable' do
+          consumer.subscribe(Set.new(%w[foo bar baz]))
+        end
+
         it 'subscribes the consumer to all topics matching a pattern' do
           consumer.subscribe('foo\..*')
         end
@@ -68,6 +74,12 @@ module Kafka
           consumer.subscribe('foo\..*', listener)
           expect(listener).to have_received(:on_partitions_assigned)
           expect(listener).to have_received(:on_partitions_revoked)
+        end
+
+        context 'when given something that is not a String or Enumerable' do
+          it 'raises TypeError' do
+            expect { consumer.subscribe(/foo|bar/) }.to raise_error(TypeError, /Enumerable of topics or topic pattern/)
+          end
         end
       end
 
