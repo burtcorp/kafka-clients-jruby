@@ -64,14 +64,15 @@ module Kafka
         end
 
         it 'subscribes the consumer to all topics matching a pattern' do
-          consumer.subscribe('foo\..*')
+          consumer.subscribe('foo\\..*')
         end
 
-        it 'registers a rebalance listener', pending: 'there is currently no way to trigger the callbacks' do
+        it 'registers a rebalance listener' do
           listener = double(:listener)
           allow(listener).to receive(:on_partitions_assigned)
           allow(listener).to receive(:on_partitions_revoked)
-          consumer.subscribe('foo\..*', listener)
+          consumer.subscribe('foo\\..*', listener)
+          consumer.poll(0)
           expect(listener).to have_received(:on_partitions_assigned)
           expect(listener).to have_received(:on_partitions_revoked)
         end
