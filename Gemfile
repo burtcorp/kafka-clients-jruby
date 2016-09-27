@@ -9,4 +9,5 @@ end
 group :test do
   gem 'rspec'
   gem 'rake'
+  gem 'kreps'
 end
