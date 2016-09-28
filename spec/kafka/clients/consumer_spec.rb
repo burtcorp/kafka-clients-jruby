@@ -257,6 +257,32 @@ module Kafka
           expect(consumer_records).to be_empty
         end
       end
+
+      describe '#seek' do
+        include_context 'available_records'
+
+        context 'when given a TopicPartition' do
+          it 'seeks to the specified offset' do
+            positions = assigned_partitions.map { |tp| consumer.position(tp) }
+            max_offset = positions.max
+            max_partition = assigned_partitions[positions.index(max_offset)]
+            consumer.seek(max_partition, 1)
+            consumer_records = consumer.poll(1)
+            expect(consumer_records.count).to eq(max_offset - 1)
+          end
+        end
+
+        context 'when given a topic and a partition' do
+          it 'seeks to the specified offset' do
+            positions = assigned_partitions.map { |tp| consumer.position(tp) }
+            max_offset = positions.max
+            max_partition = assigned_partitions[positions.index(max_offset)]
+            consumer.seek(max_partition.topic, max_partition.partition, 1)
+            consumer_records = consumer.poll(1)
+            expect(consumer_records.count).to eq(max_offset - 1)
+          end
+        end
+      end
     end
   end
 end

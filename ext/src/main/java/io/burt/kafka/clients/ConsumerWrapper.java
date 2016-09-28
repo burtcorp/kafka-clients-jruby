@@ -203,4 +203,18 @@ public class ConsumerWrapper extends RubyObject {
     kafkaConsumer.seekToEnd(tpl);
     return ctx.runtime.getNil();
   }
+
+  @JRubyMethod(required = 2, optional = 1)
+  public IRubyObject seek(ThreadContext ctx, IRubyObject[] args) {
+    TopicPartition tp = null;
+    if (args.length == 3) {
+      tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
+    } else if (args[0] instanceof TopicPartitionWrapper) {
+      tp = ((TopicPartitionWrapper) args[0]).topicPartition();
+    } else {
+      throw ctx.runtime.newTypeError(args[0], ctx.runtime.getClassFromPath("Kafka::Clients::TopicPartition"));
+    }
+    kafkaConsumer.seek(tp, args[args.length - 1].convertToInteger().getLongValue());
+    return ctx.runtime.getNil();
+  }
 }
