@@ -44,20 +44,22 @@ module Kafka
       end
 
       shared_context 'available_records' do
-        let :assigned_partitions do
-          []
-        end
-
-        before do
-          listener = double(:listener)
+        let :rebalance_listener do
+          listener = double(:rebalance_listener)
+          assigned_partitions = []
+          allow(listener).to receive(:assigned_partitions).and_return(assigned_partitions)
           allow(listener).to receive(:on_partitions_revoked)
           allow(listener).to receive(:on_partitions_assigned) do |partitions|
             assigned_partitions.concat(partitions)
           end
+          listener
+        end
+
+        before do
           send_records
-          consumer.subscribe(topic_names, listener)
+          consumer.subscribe(topic_names, rebalance_listener)
           consumer.poll(0)
-          if assigned_partitions.empty?
+          if consumer.assignment.empty?
             raise 'No partitions assigned'
           end
         end
@@ -139,7 +141,7 @@ module Kafka
           include_context 'available_records'
 
           it 'returns an enumerable of records' do
-            consumer.seek_to_beginning(assigned_partitions)
+            consumer.seek_to_beginning(consumer.assignment)
             consumer_records = consumer.poll(1)
             aggregate_failures do
               expect(consumer_records.count).to eq(10)
@@ -187,40 +189,33 @@ module Kafka
       end
 
       describe '#position' do
-        let :assigned_partitions do
-          []
-        end
-
         before do
-          listener = double(:listener)
-          allow(listener).to receive(:on_partitions_assigned) do |topic_partitions|
-            assigned_partitions.concat(topic_partitions)
-          end
           send_records
-          consumer.subscribe(topic_names.take(1), listener)
+          consumer.subscribe(topic_names.take(1))
           consumer.poll(0)
-          if assigned_partitions.empty?
+          if consumer.assignment.empty?
             raise 'No partitions assigned'
           end
         end
 
         context 'when given a topic name and partition' do
           it 'returns the offset of the next record offset for a topic and partition' do
-            offset = consumer.position(assigned_partitions.first.topic, assigned_partitions.first.partition)
+            topic_partition = consumer.assignment.first
+            offset = consumer.position(topic_partition.topic, topic_partition.partition)
             expect(offset).to be_a(Fixnum)
           end
         end
 
         context 'when given a TopicPartition' do
           it 'returns the offset of the next record offset for a topic and partition' do
-            offset = consumer.position(assigned_partitions.first)
+            offset = consumer.position(consumer.assignment.first)
             expect(offset).to be_a(Fixnum)
           end
         end
 
         context 'when given a partition not assigned to this consumer' do
           it 'raises ArgumentError' do
-            tp = TopicPartition.new(assigned_partitions.first.topic, 99)
+            tp = TopicPartition.new(consumer.assignment.first.topic, 99)
             expect { consumer.position(tp) }.to raise_error(ArgumentError, /can only check the position for partitions assigned to this consumer/)
           end
         end
@@ -230,13 +225,13 @@ module Kafka
         include_context 'available_records'
 
         it 'sets the offset to the earliest available' do
-          consumer.seek_to_beginning(assigned_partitions)
-          positions = assigned_partitions.map { |tp| consumer.position(tp) }
+          consumer.seek_to_beginning(consumer.assignment)
+          positions = consumer.assignment.map { |tp| consumer.position(tp) }
           expect(positions).to all(be_zero)
         end
 
         it 'makes #poll return the first available records' do
-          consumer.seek_to_beginning(assigned_partitions)
+          consumer.seek_to_beginning(consumer.assignment)
           consumer_records = consumer.poll(1)
           expect(consumer_records.map(&:key)).to include('hello0')
         end
@@ -246,13 +241,13 @@ module Kafka
         include_context 'available_records'
 
         it 'sets the offset to the latest available' do
-          consumer.seek_to_end(assigned_partitions)
-          positions = assigned_partitions.map { |tp| consumer.position(tp) }
+          consumer.seek_to_end(consumer.assignment)
+          positions = consumer.assignment.map { |tp| consumer.position(tp) }
           expect(positions.reduce(:+)).to eq(10)
         end
 
         it 'makes #poll not return any previous records' do
-          consumer.seek_to_end(assigned_partitions)
+          consumer.seek_to_end(consumer.assignment)
           consumer_records = consumer.poll(1)
           expect(consumer_records).to be_empty
         end
@@ -263,9 +258,9 @@ module Kafka
 
         context 'when given a TopicPartition' do
           it 'seeks to the specified offset' do
-            positions = assigned_partitions.map { |tp| consumer.position(tp) }
+            positions = consumer.assignment.map { |tp| consumer.position(tp) }
             max_offset = positions.max
-            max_partition = assigned_partitions[positions.index(max_offset)]
+            max_partition = consumer.assignment[positions.index(max_offset)]
             consumer.seek(max_partition, 1)
             consumer_records = consumer.poll(1)
             expect(consumer_records.count).to eq(max_offset - 1)
@@ -274,9 +269,9 @@ module Kafka
 
         context 'when given a topic and a partition' do
           it 'seeks to the specified offset' do
-            positions = assigned_partitions.map { |tp| consumer.position(tp) }
+            positions = consumer.assignment.map { |tp| consumer.position(tp) }
             max_offset = positions.max
-            max_partition = assigned_partitions[positions.index(max_offset)]
+            max_partition = consumer.assignment[positions.index(max_offset)]
             consumer.seek(max_partition.topic, max_partition.partition, 1)
             consumer_records = consumer.poll(1)
             expect(consumer_records.count).to eq(max_offset - 1)
@@ -300,7 +295,17 @@ module Kafka
           include_context 'available_records'
 
           it 'returns an enumerable of TopicPartitions' do
-            expect(consumer.assignment).to contain_exactly(*assigned_partitions)
+            assignment = consumer.assignment
+            aggregate_failures do
+              expect(assignment).not_to be_empty
+              expect(assignment.count).to be > 0
+              expect(assignment).to be_a(Enumerable)
+              expect(assignment.first).to be_a(TopicPartition)
+            end
+          end
+
+          it 'returns the same partitions as is given to the rebalance listener' do
+            expect(consumer.assignment).to contain_exactly(*rebalance_listener.assigned_partitions)
           end
         end
 
