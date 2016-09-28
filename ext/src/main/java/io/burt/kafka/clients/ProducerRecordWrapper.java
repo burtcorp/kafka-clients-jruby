@@ -89,6 +89,41 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod
+  public IRubyObject topic(ThreadContext ctx) {
+    return ctx.runtime.newString(record.topic());
+  }
+
+  @JRubyMethod
+  public IRubyObject partition(ThreadContext ctx) {
+    Integer p = record.partition();
+    if (p == null) {
+      return ctx.runtime.getNil();
+    } else {
+      return ctx.runtime.newFixnum(p);
+    }
+  }
+
+  @JRubyMethod
+  public IRubyObject key(ThreadContext ctx) {
+    return record.key();
+  }
+
+  @JRubyMethod
+  public IRubyObject value(ThreadContext ctx) {
+    return record.value();
+  }
+
+  @JRubyMethod
+  public IRubyObject timestamp(ThreadContext ctx) {
+    Long t = record.timestamp();
+    if (t == null) {
+      return ctx.runtime.getNil();
+    } else {
+      return ctx.runtime.newTime(t);
+    }
+  }
+
+  @JRubyMethod
   public IRubyObject hash(ThreadContext ctx) {
     return ctx.runtime.newFixnum(record.hashCode());
   }
