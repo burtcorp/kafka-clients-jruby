@@ -217,4 +217,14 @@ public class ConsumerWrapper extends RubyObject {
     kafkaConsumer.seek(tp, args[args.length - 1].convertToInteger().getLongValue());
     return ctx.runtime.getNil();
   }
+
+  @JRubyMethod
+  public IRubyObject assignment(ThreadContext ctx) {
+    Set<TopicPartition> topicPartitions = kafkaConsumer.assignment();
+    RubyArray array = ctx.runtime.newArray(topicPartitions.size());
+    for (TopicPartition topicPartition : topicPartitions) {
+      array.append(TopicPartitionWrapper.create(ctx.runtime, topicPartition));
+    }
+    return array;
+  }
 }

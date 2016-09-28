@@ -283,6 +283,35 @@ module Kafka
           end
         end
       end
+
+      describe '#assignment' do
+        context 'before assignment' do
+          it 'returns an empty enumerable' do
+            assignment = consumer.assignment
+            aggregate_failures do
+              expect(assignment).to be_empty
+              expect(assignment.count).to eq(0)
+              expect(assignment).to be_a(Enumerable)
+            end
+          end
+        end
+
+        context 'after subscription' do
+          include_context 'available_records'
+
+          it 'returns an enumerable of TopicPartitions' do
+            expect(consumer.assignment).to contain_exactly(*assigned_partitions)
+          end
+        end
+
+        context 'after manual assignment' do
+          it 'returns an enumerable of TopicPartitions', :pending do
+            topic_partitions = topic_names.map { |name| TopicPartition.new(name, 0) }
+            consumer.assign(topic_partitions)
+            expect(consumer.assignment.to_a).to eq(topic_partitions)
+          end
+        end
+      end
     end
   end
 end
