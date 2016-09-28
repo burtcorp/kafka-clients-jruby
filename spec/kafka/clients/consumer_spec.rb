@@ -241,6 +241,22 @@ module Kafka
           expect(consumer_records.map(&:key)).to include('hello0')
         end
       end
+
+      describe '#seek_to_end' do
+        include_context 'available_records'
+
+        it 'sets the offset to the latest available' do
+          consumer.seek_to_end(assigned_partitions)
+          positions = assigned_partitions.map { |tp| consumer.position(tp) }
+          expect(positions.reduce(:+)).to eq(10)
+        end
+
+        it 'makes #poll not return any previous records' do
+          consumer.seek_to_end(assigned_partitions)
+          consumer_records = consumer.poll(1)
+          expect(consumer_records).to be_empty
+        end
+      end
     end
   end
 end

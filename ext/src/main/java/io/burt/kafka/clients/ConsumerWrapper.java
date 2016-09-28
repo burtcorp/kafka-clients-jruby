@@ -191,4 +191,16 @@ public class ConsumerWrapper extends RubyObject {
     kafkaConsumer.seekToBeginning(tpl);
     return ctx.runtime.getNil();
   }
+
+  @SuppressWarnings("unchecked")
+  @JRubyMethod(name = "seek_to_end", required = 1)
+  public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject partitions) {
+    RubyArray tpa = partitions.convertToArray();
+    List<TopicPartition> tpl = new ArrayList<>(tpa.size());
+    for (IRubyObject tp : (List<IRubyObject>) tpa.getList()) {
+      tpl.add(TopicPartitionWrapper.toTopicPartition(ctx, tp));
+    }
+    kafkaConsumer.seekToEnd(tpl);
+    return ctx.runtime.getNil();
+  }
 }
