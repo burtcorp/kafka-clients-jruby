@@ -27,6 +27,7 @@ public class KafkaClientsLibrary implements Library {
     ConsumerWrapper.install(runtime, kafkaClientsModule);
     ConsumerRecordsWrapper.install(runtime, kafkaClientsModule);
     OffsetAndMetadataWrapper.install(runtime, kafkaClientsModule);
+    ConsumerRecordWrapper.install(runtime, kafkaClientsModule);
     installErrors(runtime, kafkaClientsModule);
   }
 

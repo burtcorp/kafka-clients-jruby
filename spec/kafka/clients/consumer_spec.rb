@@ -9,11 +9,34 @@ module Kafka
         described_class.new(config)
       end
 
+      let :producer do
+        Kafka::Clients::Producer.new(config)
+      end
+
+      let :consumer_id do
+        (Time.now.to_f * 1000).to_i.to_s
+      end
+
       let :config do
         {
           'bootstrap.servers' => 'localhost:19091',
-          'group.id' => sprintf('kafka-client-jruby-%d', (Time.now.to_f * 1000).to_i),
+          'group.id' => 'kafka-client-jruby-' << consumer_id,
         }
+      end
+
+      let :topic_names do
+        %w[topic0 topic1].map { |t| t << '_' << consumer_id }
+      end
+
+      let :producer_records do
+        Array.new(10) do |i|
+          ProducerRecord.new(topic_names.first, sprintf('hello%d', i), sprintf('world%d', i))
+        end
+      end
+
+      def send_records
+        producer_records.each { |r| producer.send(r).get }
+        producer.flush
       end
 
       after do
@@ -56,11 +79,11 @@ module Kafka
 
       describe '#subscribe' do
         it 'subscribes the consumer to the specified topics' do
-          consumer.subscribe(%w[foo bar baz])
+          consumer.subscribe(topic_names)
         end
 
         it 'subscribes the consumer to the topics in an Enumerable' do
-          consumer.subscribe(Set.new(%w[foo bar baz]))
+          consumer.subscribe(Set.new(topic_names))
         end
 
         it 'subscribes the consumer to all topics matching a pattern' do
@@ -86,16 +109,31 @@ module Kafka
 
       describe '#unsubscribe' do
         it 'unsubscribes the consumer' do
-          consumer.subscribe(%w[foo bar baz])
+          consumer.subscribe(topic_names)
           consumer.unsubscribe
         end
       end
 
       describe '#poll' do
-        it 'retrieves a batch of messages' do
-          consumer.subscribe(%w[foo bar])
-          records = consumer.poll(0)
-          expect(records).to_not be_nil
+        it 'returns an enumerable of records' do
+          listener = double(:listener)
+          assigned_partitions = nil
+          allow(listener).to receive(:on_partitions_revoked)
+          allow(listener).to receive(:on_partitions_assigned) do |partitions|
+            assigned_partitions = partitions
+          end
+          send_records
+          consumer.subscribe(topic_names, listener)
+          consumer.poll(0)
+          consumer.seek_to_beginning(assigned_partitions)
+          consumer_records = consumer.poll(5)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(10)
+            expect(consumer_records).to be_an(Enumerable)
+            expect(consumer_records.each).to be_an(Enumerable)
+            expect(consumer_records.each.first).to be_a(ConsumerRecord)
+            expect(consumer_records.first).to be_a(ConsumerRecord)
+          end
         end
 
         context 'when not given a group ID' do
@@ -106,7 +144,7 @@ module Kafka
           end
 
           it 'raises InvalidGroupIdError' do
-            consumer.subscribe(%w[foo bar])
+            consumer.subscribe(topic_names)
             expect { consumer.poll(0) }.to raise_error(InvalidGroupIdError)
           end
         end
@@ -119,8 +157,8 @@ module Kafka
 
         it 'synchronously commits specific offsets' do
           offsets = {
-            TopicPartition.new('foo', 2) => OffsetAndMetadata.new(12, 'hello world'),
-            TopicPartition.new('bar', 0) => OffsetAndMetadata.new(24, 'hello world'),
+            TopicPartition.new(topic_names[0], 2) => OffsetAndMetadata.new(12, 'hello world'),
+            TopicPartition.new(topic_names[1], 0) => OffsetAndMetadata.new(24, 'hello world'),
           }
           consumer.commit_sync(offsets)
         end
@@ -132,15 +170,16 @@ module Kafka
         end
 
         before do
-          barrier = Java::JavaUtilConcurrent::Semaphore.new(0)
           listener = double(:listener)
           allow(listener).to receive(:on_partitions_assigned) do |topic_partitions|
             assigned_partitions.concat(topic_partitions)
-            barrier.release
           end
-          consumer.subscribe(%w[topictopic], listener)
-          consumer.poll(1)
-          barrier.acquire
+          send_records
+          consumer.subscribe(topic_names.take(1), listener)
+          consumer.poll(0)
+          if assigned_partitions.empty?
+            raise 'No partitions assigned'
+          end
         end
 
         context 'when given a topic name and partition' do

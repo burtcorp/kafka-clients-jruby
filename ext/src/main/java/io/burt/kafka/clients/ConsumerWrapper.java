@@ -1,5 +1,6 @@
 package io.burt.kafka.clients;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -177,5 +178,17 @@ public class ConsumerWrapper extends RubyObject {
     } catch (IllegalArgumentException iae) {
       throw ctx.runtime.newArgumentError(iae.getMessage());
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @JRubyMethod(name = "seek_to_beginning", required = 1)
+  public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject partitions) {
+    RubyArray tpa = partitions.convertToArray();
+    List<TopicPartition> tpl = new ArrayList<>(tpa.size());
+    for (IRubyObject tp : (List<IRubyObject>) tpa.getList()) {
+      tpl.add(TopicPartitionWrapper.toTopicPartition(ctx, tp));
+    }
+    kafkaConsumer.seekToBeginning(tpl);
+    return ctx.runtime.getNil();
   }
 }
