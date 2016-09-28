@@ -50,6 +50,11 @@ public class ConsumerRecordsWrapper extends RubyObject {
     return this;
   }
 
+  @JRubyMethod(name = "empty?")
+  public IRubyObject empty_p(ThreadContext ctx) {
+    return ctx.runtime.newBoolean(records.count() == 0);
+  }
+
   @JRubyMethod
   public IRubyObject hash(ThreadContext ctx) {
     return ctx.runtime.newFixnum(records.hashCode());
