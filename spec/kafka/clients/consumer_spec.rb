@@ -43,6 +43,26 @@ module Kafka
         producer.close rescue nil
       end
 
+      shared_context 'available_records' do
+        let :assigned_partitions do
+          []
+        end
+
+        before do
+          listener = double(:listener)
+          allow(listener).to receive(:on_partitions_revoked)
+          allow(listener).to receive(:on_partitions_assigned) do |partitions|
+            assigned_partitions.concat(partitions)
+          end
+          send_records
+          consumer.subscribe(topic_names, listener)
+          consumer.poll(0)
+          if assigned_partitions.empty?
+            raise 'No partitions assigned'
+          end
+        end
+      end
+
       describe '#initialize' do
         it 'creates and configures the consumer' do
           consumer
@@ -115,24 +135,26 @@ module Kafka
       end
 
       describe '#poll' do
-        it 'returns an enumerable of records' do
-          listener = double(:listener)
-          assigned_partitions = nil
-          allow(listener).to receive(:on_partitions_revoked)
-          allow(listener).to receive(:on_partitions_assigned) do |partitions|
-            assigned_partitions = partitions
+        context 'when there are records available' do
+          include_context 'available_records'
+
+          it 'returns an enumerable of records' do
+            consumer.seek_to_beginning(assigned_partitions)
+            consumer_records = consumer.poll(1)
+            aggregate_failures do
+              expect(consumer_records.count).to eq(10)
+              expect(consumer_records).to be_an(Enumerable)
+              expect(consumer_records.each).to be_an(Enumerable)
+              expect(consumer_records.each.first).to be_a(ConsumerRecord)
+              expect(consumer_records.first).to be_a(ConsumerRecord)
+            end
           end
-          send_records
-          consumer.subscribe(topic_names, listener)
-          consumer.poll(0)
-          consumer.seek_to_beginning(assigned_partitions)
-          consumer_records = consumer.poll(5)
-          aggregate_failures do
-            expect(consumer_records.count).to eq(10)
-            expect(consumer_records).to be_an(Enumerable)
-            expect(consumer_records.each).to be_an(Enumerable)
-            expect(consumer_records.each.first).to be_a(ConsumerRecord)
-            expect(consumer_records.first).to be_a(ConsumerRecord)
+        end
+
+        context 'when there are no records available' do
+          it 'returns an empty enumerable' do
+            consumer_records = consumer.poll(0)
+            expect(consumer_records).to be_empty
           end
         end
 
@@ -201,6 +223,22 @@ module Kafka
             tp = TopicPartition.new(assigned_partitions.first.topic, 99)
             expect { consumer.position(tp) }.to raise_error(ArgumentError, /can only check the position for partitions assigned to this consumer/)
           end
+        end
+      end
+
+      describe '#seek_to_beginning' do
+        include_context 'available_records'
+
+        it 'sets the offset to the earliest available' do
+          consumer.seek_to_beginning(assigned_partitions)
+          positions = assigned_partitions.map { |tp| consumer.position(tp) }
+          expect(positions).to all(be_zero)
+        end
+
+        it 'makes #poll return the first available records' do
+          consumer.seek_to_beginning(assigned_partitions)
+          consumer_records = consumer.poll(1)
+          expect(consumer_records.map(&:key)).to include('hello0')
         end
       end
     end
