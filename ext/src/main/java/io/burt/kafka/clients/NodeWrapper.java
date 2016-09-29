@@ -33,7 +33,7 @@ public class NodeWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "has_rack?")
-  public IRubyObject has_rack_p(ThreadContext ctx) {
+  public IRubyObject hasRack(ThreadContext ctx) {
     return ctx.runtime.newBoolean(node.hasRack());
   }
 
@@ -57,7 +57,7 @@ public class NodeWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "empty?")
-  public IRubyObject empt_p(ThreadContext ctx) {
+  public IRubyObject isEmpty(ThreadContext ctx) {
     return ctx.runtime.newBoolean(node.isEmpty());
   }
 
@@ -72,7 +72,7 @@ public class NodeWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof NodeWrapper) {
       return ctx.runtime.newBoolean(node.equals(((NodeWrapper) other).node));
     } else {

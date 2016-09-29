@@ -92,7 +92,7 @@ public class ConsumerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ConsumerRecordWrapper) {
       return ctx.runtime.newBoolean(record.equals(((ConsumerRecordWrapper) other).record));
     } else {

@@ -129,7 +129,7 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ProducerRecordWrapper) {
       return ctx.runtime.newBoolean(record.equals(((ProducerRecordWrapper) other).record));
     } else {

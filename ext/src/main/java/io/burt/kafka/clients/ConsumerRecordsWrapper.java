@@ -51,7 +51,7 @@ public class ConsumerRecordsWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "empty?")
-  public IRubyObject empty_p(ThreadContext ctx) {
+  public IRubyObject isEmpty(ThreadContext ctx) {
     return ctx.runtime.newBoolean(records.count() == 0);
   }
 
@@ -61,7 +61,7 @@ public class ConsumerRecordsWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ConsumerRecordsWrapper) {
       return ctx.runtime.newBoolean(records.equals(((ConsumerRecordsWrapper) other).records));
     } else {

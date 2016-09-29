@@ -170,7 +170,7 @@ public class ClusterWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof ClusterWrapper) {
       return ctx.runtime.newBoolean(cluster.equals(((ClusterWrapper) other).cluster));
     } else {

@@ -88,7 +88,7 @@ public class PartitionInfoWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof PartitionInfoWrapper) {
       return ctx.runtime.newBoolean(partition.equals(((PartitionInfoWrapper) other).partition));
     } else {

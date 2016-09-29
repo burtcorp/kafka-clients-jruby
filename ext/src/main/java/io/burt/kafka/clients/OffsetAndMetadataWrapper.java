@@ -76,7 +76,7 @@ public class OffsetAndMetadataWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "eql?", alias = {"=="})
-  public IRubyObject eql_p(ThreadContext ctx, IRubyObject other) {
+  public IRubyObject isEql(ThreadContext ctx, IRubyObject other) {
     if (other instanceof OffsetAndMetadataWrapper) {
       OffsetAndMetadata otherOffsetAndMetadata = ((OffsetAndMetadataWrapper) other).offsetAndMetadata;
       if (this.offsetAndMetadata == null) {
