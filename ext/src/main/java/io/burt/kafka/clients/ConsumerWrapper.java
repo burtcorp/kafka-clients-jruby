@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -29,6 +30,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -159,13 +161,65 @@ public class ConsumerWrapper extends RubyObject {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private Map<TopicPartition, OffsetAndMetadata> toOffsets(ThreadContext ctx, IRubyObject arg) {
+    Map<TopicPartition, OffsetAndMetadata> syncOffsets = new HashMap<>();
+    RubyHash offsets = arg.convertToHash();
+    for (IRubyObject key : (List<IRubyObject>) offsets.keys().getList()) {
+      IRubyObject value = offsets.fastARef(key);
+      if (key instanceof TopicPartitionWrapper) {
+        if (value instanceof OffsetAndMetadataWrapper) {
+          TopicPartition tp = ((TopicPartitionWrapper) key).topicPartition();
+          OffsetAndMetadata om = ((OffsetAndMetadataWrapper) value).offsetAndMetadata();
+          syncOffsets.put(tp, om);
+        } else {
+          throw ctx.runtime.newTypeError(value, ctx.runtime.getClassFromPath("Kafka::Clients::OffsetAndMetadata"));
+        }
+      } else {
+        throw ctx.runtime.newTypeError(key, ctx.runtime.getClassFromPath("Kafka::Clients::TopicPartition"));
+      }
+    }
+    return syncOffsets;
+  }
+
+  private RubyHash fromOffsets(ThreadContext ctx, Map<TopicPartition, OffsetAndMetadata> syncOffsets) {
+    RubyHash offsets = RubyHash.newHash(ctx.runtime);
+    for (TopicPartition tp : syncOffsets.keySet()) {
+      OffsetAndMetadata om = syncOffsets.get(tp);
+      offsets.fastASet(TopicPartitionWrapper.create(ctx.runtime, tp), OffsetAndMetadataWrapper.create(ctx.runtime, om));
+    }
+    return offsets;
+  }
+
   @JRubyMethod(name = "commit_sync", optional = 1)
   public IRubyObject commitSync(ThreadContext ctx, IRubyObject[] args) {
     if (args.length == 0) {
       kafkaConsumer.commitSync();
     } else {
-      Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
-      kafkaConsumer.commitSync(offsets);
+      kafkaConsumer.commitSync(toOffsets(ctx, args[0]));
+    }
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod(name = "commit_async", optional = 1)
+  public IRubyObject commitAsync(final ThreadContext ctx, IRubyObject[] args, final Block block) {
+    OffsetCommitCallback callback = new OffsetCommitCallback() {
+      @Override
+      public void onComplete(Map<TopicPartition, OffsetAndMetadata> syncOffsets, Exception exception) {
+        if (block.isGiven()) {
+          IRubyObject error = ctx.runtime.getNil();
+          if (exception != null) {
+            RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(ctx.runtime, exception);
+            error = errorClass.newInstance(ctx, ctx.runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
+          }
+          block.call(ctx, new IRubyObject[] {fromOffsets(ctx, syncOffsets), error});
+        }
+      }
+    };
+    if (args.length == 0) {
+      kafkaConsumer.commitAsync(callback);
+    } else {
+      kafkaConsumer.commitAsync(toOffsets(ctx, args[0]), callback);
     }
     return ctx.runtime.getNil();
   }
@@ -181,6 +235,7 @@ public class ConsumerWrapper extends RubyObject {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private List<TopicPartition> toTopicPartitionList(ThreadContext ctx, IRubyObject partitions) {
     RubyArray tpa = partitions.convertToArray();
     List<TopicPartition> tpl = new ArrayList<>(tpa.size());

@@ -121,16 +121,87 @@ module Kafka
       end
 
       describe '#commit_sync' do
-        it 'synchronously commits the offsets received from the last call to #poll' do
-          consumer.commit_sync
+        include_context 'available_records'
+
+        context 'without arguments' do
+          it 'synchronously commits the offsets received from the last call to #poll' do
+            consumer.poll(0)
+            consumer.commit_sync
+          end
         end
 
-        it 'synchronously commits specific offsets' do
-          offsets = {
-            TopicPartition.new(topic_names[0], 2) => OffsetAndMetadata.new(12, 'hello world'),
-            TopicPartition.new(topic_names[1], 0) => OffsetAndMetadata.new(24, 'hello world'),
-          }
-          consumer.commit_sync(offsets)
+        context 'with arguments' do
+          it 'synchronously commits specific offsets' do
+            records = consumer.poll(0)
+            offsets = {}
+            records.each do |record|
+              tp = TopicPartition.new(record.topic, record.partition)
+              om = offsets[tp] ||= OffsetAndMetadata.new(0, '')
+              if record.offset > om.offset
+                offsets[tp] = OffsetAndMetadata.new(om.offset, '')
+              end
+            end
+            consumer.commit_sync(offsets)
+          end
+        end
+      end
+
+      describe '#commit_async' do
+        context 'without arguments' do
+          it 'asynchronously commits the offsets received from the last call to #poll' do
+            consumer.commit_async
+          end
+
+          context 'with a callback' do
+            it 'asynchronously commits the offsets received from the last call to #poll and then calls the callback' do
+              committed_offsets = nil
+              consumer.commit_async do |offsets, _|
+                committed_offsets = offsets
+              end
+              expect(committed_offsets).to_not be_nil
+            end
+          end
+        end
+
+        context 'with arguments' do
+          let :offsets do
+            records = consumer.poll(0)
+            offsets = {}
+            records.each do |record|
+              tp = TopicPartition.new(record.topic, record.partition)
+              om = offsets[tp] ||= OffsetAndMetadata.new(0, '')
+              if record.offset > om.offset
+                offsets[tp] = OffsetAndMetadata.new(om.offset, '')
+              end
+            end
+            offsets
+          end
+
+          it 'asynchronously commits specific offsets' do
+            consumer.commit_async(offsets)
+          end
+
+          context 'with a callback' do
+            it 'asynchronously commits the offsets and then calls the callback' do
+              rendez_vous = Java::JavaUtilConcurrent::SynchronousQueue.new
+              committed_offsets = nil
+              consumer.commit_async(offsets) do |offsets, _|
+                committed_offsets = offsets
+              end
+              expect(committed_offsets).to_not be_nil
+            end
+
+            context 'and there is an error' do
+              it 'passes the error as the second argument to the callback' do
+                rendez_vous = Java::JavaUtilConcurrent::SynchronousQueue.new
+                error = nil
+                consumer.commit_async({}) do |_, e|
+                  error = e
+                end
+                expect(error).to be_a(Kafka::Clients::ApiError)
+              end
+            end
+          end
         end
       end
 
