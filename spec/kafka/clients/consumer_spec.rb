@@ -325,6 +325,16 @@ module Kafka
           expect(consumer.assignment.to_a).to contain_exactly(*topic_partitions)
         end
       end
+
+      describe '#list_topics' do
+        include_context 'available_records'
+
+        it 'returns information on the available topics and their partitions' do
+          topics = consumer.list_topics
+          partitions = topics[topic_names.first]
+          expect(partitions[0]).to be_a(PartitionInfo)
+        end
+      end
     end
   end
 end

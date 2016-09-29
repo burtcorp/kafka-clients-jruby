@@ -15,6 +15,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -231,5 +232,20 @@ public class ConsumerWrapper extends RubyObject {
   public IRubyObject assign(ThreadContext ctx, IRubyObject partitions) {
     kafkaConsumer.assign(toTopicPartitionList(ctx, partitions));
     return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod(name = "list_topics")
+  public IRubyObject listTopics(ThreadContext ctx) {
+    Map<String, List<PartitionInfo>> topicsAndPartitions = kafkaConsumer.listTopics();
+    RubyHash topics = RubyHash.newHash(ctx.runtime);
+    for (String t : topicsAndPartitions.keySet()) {
+      List<PartitionInfo> pis = topicsAndPartitions.get(t);
+      RubyArray partitionInfos = ctx.runtime.newArray(pis.size());
+      for (PartitionInfo pi : pis) {
+        partitionInfos.append(PartitionInfoWrapper.create(ctx.runtime, pi));
+      }
+      topics.fastASet(ctx.runtime.newString(t), partitionInfos);
+    }
+    return topics;
   }
 }
