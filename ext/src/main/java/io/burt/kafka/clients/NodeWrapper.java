@@ -79,4 +79,20 @@ public class NodeWrapper extends RubyObject {
       throw ctx.runtime.newTypeError(other, metaClass);
     }
   }
+
+  @Override
+  public String toString() {
+    return toS(Ruby.getGlobalRuntime().getCurrentContext()).toString();
+  }
+
+  @JRubyMethod(name = "to_s")
+  public IRubyObject toS(ThreadContext ctx) {
+    return ctx.runtime.newString(String.format(
+      "#<%s @id=%d, @host=\"%s\", @port=%d>",
+      getMetaClass().getName(),
+      node.id(),
+      node.host(),
+      node.port()
+    ));
+  }
 }

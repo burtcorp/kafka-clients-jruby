@@ -1,0 +1,157 @@
+# encoding: utf-8
+
+module Kafka
+  module Clients
+    describe OffsetAndMetadata do
+      let :offset_and_metadata do
+        OffsetAndMetadata.new(234253434, 'hello world')
+      end
+
+      describe '#to_s' do
+        context 'returns a string that' do
+          it 'includes the class name' do
+            expect(offset_and_metadata.to_s).to include(described_class.name)
+          end
+
+          it 'includes the offset' do
+            expect(offset_and_metadata.to_s).to include('@offset=234253434')
+          end
+
+          it 'includes the metadata' do
+            expect(offset_and_metadata.to_s).to include('@metadata="hello world"')
+          end
+        end
+      end
+    end
+
+    describe PartitionInfo do
+      include_context 'producer_consumer'
+
+      let :partition_info do
+        producer.partitions_for(topic_names.first)[0]
+      end
+
+      describe '#to_s' do
+        context 'returns a string that' do
+          it 'includes the class name' do
+            expect(partition_info.to_s).to include(described_class.name)
+          end
+
+          it 'includes the topic' do
+            expect(partition_info.to_s).to include(%|@topic="#{topic_names.first}"|)
+          end
+
+          it 'includes the partition' do
+            expect(partition_info.to_s).to include("@partition=#{partition_info.partition}")
+          end
+
+          it 'includes the leader' do
+            expect(partition_info.to_s).to include("@leader=#{partition_info.leader}")
+          end
+
+          it 'includes the replicas' do
+            expect(partition_info.to_s).to include("@replicas=#{partition_info.replicas}")
+          end
+
+          it 'includes the in sync replicas' do
+            expect(partition_info.to_s).to include("@in_sync_replicas=#{partition_info.in_sync_replicas}")
+          end
+        end
+      end
+    end
+
+    describe Node do
+      include_context 'producer_consumer'
+
+      let :node do
+        producer.partitions_for(topic_names.first)[0].leader
+      end
+
+      describe '#to_s' do
+        context 'returns a string that' do
+          it 'includes the class name' do
+            expect(node.to_s).to include(described_class.name)
+          end
+
+          it 'includes the host' do
+            expect(node.to_s).to include(%|@host="#{node.host}"|)
+          end
+
+          it 'includes the port' do
+            expect(node.to_s).to include("@port=#{node.port}")
+          end
+
+          it 'includes the node ID' do
+            expect(node.to_s).to include("@id=#{node.id}")
+          end
+        end
+      end
+    end
+
+    describe RecordMetadata do
+      include_context 'producer_consumer'
+
+      let :record_metadata do
+        producer.send(ProducerRecord.new(topic_names.first, 'hello world')).get
+      end
+
+      describe '#to_s' do
+        context 'returns a string that' do
+          it 'includes the class name' do
+            expect(record_metadata.to_s).to include(described_class.name)
+          end
+
+          it 'includes the topic' do
+            expect(record_metadata.to_s).to include(%|@topic="#{record_metadata.topic}"|)
+          end
+
+          it 'includes the partition' do
+            expect(record_metadata.to_s).to include("@partition=#{record_metadata.partition}")
+          end
+
+          it 'includes the offset' do
+            expect(record_metadata.to_s).to include("@offset=#{record_metadata.offset}")
+          end
+
+          it 'includes the timestamp' do
+            expect(record_metadata.to_s).to include("@timestamp=#{record_metadata.timestamp}")
+          end
+
+          it 'includes the checksum' do
+            expect(record_metadata.to_s).to include("@checksum=#{record_metadata.checksum}")
+          end
+
+          it 'includes the serialized key size' do
+            expect(record_metadata.to_s).to include("@serialized_key_size=#{record_metadata.serialized_key_size}")
+          end
+
+          it 'includes the serialized value size' do
+            expect(record_metadata.to_s).to include("@serialized_value_size=#{record_metadata.serialized_value_size}")
+          end
+        end
+      end
+    end
+
+    describe TopicPartition do
+      let :topic_partition do
+        TopicPartition.new('tropic_topic', 3)
+      end
+
+      describe '#to_s' do
+        context 'returns a string that' do
+          it 'includes the class name' do
+            expect(topic_partition.to_s).to include(described_class.name)
+          end
+
+          it 'includes the topic' do
+            expect(topic_partition.to_s).to include('@topic="tropic_topic"')
+          end
+
+          it 'includes the partition' do
+            expect(topic_partition.to_s).to include('@partition=3')
+          end
+        end
+      end
+    end
+  end
+end

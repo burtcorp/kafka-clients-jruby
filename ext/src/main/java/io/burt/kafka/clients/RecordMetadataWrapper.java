@@ -66,4 +66,24 @@ public class RecordMetadataWrapper extends RubyObject {
   public IRubyObject serializedValueSize(ThreadContext ctx) {
     return ctx.runtime.newFixnum(metadata.serializedValueSize());
   }
+
+  @Override
+  public String toString() {
+    return toS(Ruby.getGlobalRuntime().getCurrentContext()).toString();
+  }
+
+  @JRubyMethod(name = "to_s")
+  public IRubyObject toS(ThreadContext ctx) {
+    return ctx.runtime.newString(String.format(
+      "#<%s @topic=\"%s\", @partition=%d, @offset=%d, @timestamp=%s, @checksum=%d, @serialized_key_size=%d, @serialized_value_size=%d>",
+      getMetaClass().getName(),
+      metadata.topic(),
+      metadata.partition(),
+      metadata.offset(),
+      timestamp(ctx),
+      metadata.checksum(),
+      metadata.serializedKeySize(),
+      metadata.serializedValueSize()
+    ));
+  }
 }
