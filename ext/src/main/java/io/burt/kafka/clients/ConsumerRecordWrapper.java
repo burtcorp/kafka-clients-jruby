@@ -15,7 +15,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 @SuppressWarnings("serial")
 @JRubyClass(name = "Kafka::Clients::ConsumerRecord")
 public class ConsumerRecordWrapper extends RubyObject {
-  private ConsumerRecord<IRubyObject, IRubyObject> record;
+  private final ConsumerRecord<IRubyObject, IRubyObject> record;
+
   private IRubyObject topic;
   private IRubyObject partition;
   private IRubyObject checksum;

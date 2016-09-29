@@ -261,7 +261,7 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(required = 2, optional = 1)
   public IRubyObject seek(ThreadContext ctx, IRubyObject[] args) {
-    TopicPartition tp = null;
+    TopicPartition tp;
     if (args.length == 3) {
       tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
     } else if (args[0] instanceof TopicPartitionWrapper) {

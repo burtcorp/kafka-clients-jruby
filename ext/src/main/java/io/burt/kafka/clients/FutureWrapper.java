@@ -38,7 +38,7 @@ public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> 
     return new FutureWrapper<>(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::Future"), future, transformer);
   }
 
-  public static interface Rubifier<V> {
+  public interface Rubifier<V> {
     IRubyObject transform(V value);
   }
 
