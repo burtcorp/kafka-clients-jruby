@@ -79,7 +79,7 @@ public class ProducerWrapper extends RubyObject {
   public IRubyObject initialize(ThreadContext ctx, IRubyObject config) {
     try {
       Serializer<IRubyObject> serializer = new RubyStringSerializer();
-      kafkaProducer = new KafkaProducer<IRubyObject, IRubyObject>(convertKafkaOptions(ctx, config), serializer, serializer);
+      kafkaProducer = new KafkaProducer<>(convertKafkaOptions(ctx, config), serializer, serializer);
       return this;
     } catch (KafkaException ke) {
       throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);

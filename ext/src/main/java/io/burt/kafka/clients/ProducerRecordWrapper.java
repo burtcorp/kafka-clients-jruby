@@ -79,7 +79,7 @@ public class ProducerRecordWrapper extends RubyObject {
     if (!timestamp.isNil()) {
       ts = (long) (timestamp.convertToFloat().getDoubleValue() * 1000);
     }
-    return new ProducerRecord<IRubyObject, IRubyObject>(topic.asJavaString(), p, ts, key, value);
+    return new ProducerRecord<>(topic.asJavaString(), p, ts, key, value);
   }
 
   @JRubyMethod(required = 2, optional = 3)
