@@ -50,7 +50,7 @@ public class ClusterWrapper extends RubyObject {
       List<Node> cns = cluster.nodes();
       RubyArray ns = ctx.runtime.newArray(cns.size());
       for (Node n : cns) {
-        ns.add(NodeWrapper.create(ctx.runtime, n));
+        ns.append(NodeWrapper.create(ctx.runtime, n));
       }
       nodes = ns;
     }
@@ -95,7 +95,7 @@ public class ClusterWrapper extends RubyObject {
     List<PartitionInfo> partitionInfos = cluster.partitionsForTopic(t);
     RubyArray partitionInfoWrappers = ctx.runtime.newArray(partitionInfos.size());
     for (PartitionInfo pi : partitionInfos) {
-      partitionInfoWrappers.add(PartitionInfoWrapper.create(ctx.runtime, pi));
+      partitionInfoWrappers.append(PartitionInfoWrapper.create(ctx.runtime, pi));
     }
     return partitionInfoWrappers;
   }
@@ -106,7 +106,7 @@ public class ClusterWrapper extends RubyObject {
     List<PartitionInfo> partitionInfos = cluster.availablePartitionsForTopic(t);
     RubyArray partitionInfoWrappers = ctx.runtime.newArray(partitionInfos.size());
     for (PartitionInfo pi : partitionInfos) {
-      partitionInfoWrappers.add(PartitionInfoWrapper.create(ctx.runtime, pi));
+      partitionInfoWrappers.append(PartitionInfoWrapper.create(ctx.runtime, pi));
     }
     return partitionInfoWrappers;
   }
@@ -117,7 +117,7 @@ public class ClusterWrapper extends RubyObject {
     List<PartitionInfo> partitionInfos = cluster.partitionsForNode(n);
     RubyArray partitionInfoWrappers = ctx.runtime.newArray(partitionInfos.size());
     for (PartitionInfo pi : partitionInfos) {
-      partitionInfoWrappers.add(PartitionInfoWrapper.create(ctx.runtime, pi));
+      partitionInfoWrappers.append(PartitionInfoWrapper.create(ctx.runtime, pi));
     }
     return partitionInfoWrappers;
   }
@@ -139,7 +139,7 @@ public class ClusterWrapper extends RubyObject {
       Set<String> topicNames = cluster.topics();
       RubyArray ts = ctx.runtime.newArray(topicNames.size());
       for (String topicName : topicNames) {
-        ts.add(ctx.runtime.newString(topicName));
+        ts.append(ctx.runtime.newString(topicName));
       }
       topics = ts;
     }
@@ -152,7 +152,7 @@ public class ClusterWrapper extends RubyObject {
       Set<String> topicNames = cluster.unauthorizedTopics();
       RubyArray ts = ctx.runtime.newArray(topicNames.size());
       for (String topicName : topicNames) {
-        ts.add(ctx.runtime.newString(topicName));
+        ts.append(ctx.runtime.newString(topicName));
       }
       unauthorizedTopics = ts;
     }

@@ -103,7 +103,7 @@ public class ConsumerWrapper extends RubyObject {
         if (listener != null && listener.respondsTo("on_partitions_revoked")) {
           RubyArray topicPartitions = ctx.runtime.newArray(partitions.size());
           for (TopicPartition tp : partitions) {
-            topicPartitions.add(TopicPartitionWrapper.create(ctx.runtime, tp));
+            topicPartitions.append(TopicPartitionWrapper.create(ctx.runtime, tp));
           }
           listener.callMethod(ctx, "on_partitions_revoked", topicPartitions);
         }
@@ -114,7 +114,7 @@ public class ConsumerWrapper extends RubyObject {
         if (listener != null && listener.respondsTo("on_partitions_assigned")) {
           RubyArray topicPartitions = ctx.runtime.newArray(partitions.size());
           for (TopicPartition tp : partitions) {
-            topicPartitions.add(TopicPartitionWrapper.create(ctx.runtime, tp));
+            topicPartitions.append(TopicPartitionWrapper.create(ctx.runtime, tp));
           }
           listener.callMethod(ctx, "on_partitions_assigned", topicPartitions);
         }
