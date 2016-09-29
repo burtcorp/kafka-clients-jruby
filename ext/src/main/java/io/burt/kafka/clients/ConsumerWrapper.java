@@ -180,27 +180,26 @@ public class ConsumerWrapper extends RubyObject {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @JRubyMethod(name = "seek_to_beginning", required = 1)
-  public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject partitions) {
+  private List<TopicPartition> toTopicPartitionList(ThreadContext ctx, IRubyObject partitions) {
     RubyArray tpa = partitions.convertToArray();
     List<TopicPartition> tpl = new ArrayList<>(tpa.size());
     for (IRubyObject tp : (List<IRubyObject>) tpa.getList()) {
       tpl.add(TopicPartitionWrapper.toTopicPartition(ctx, tp));
     }
-    kafkaConsumer.seekToBeginning(tpl);
+    return tpl;
+  }
+
+  @SuppressWarnings("unchecked")
+  @JRubyMethod(name = "seek_to_beginning", required = 1)
+  public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject partitions) {
+    kafkaConsumer.seekToBeginning(toTopicPartitionList(ctx, partitions));
     return ctx.runtime.getNil();
   }
 
   @SuppressWarnings("unchecked")
   @JRubyMethod(name = "seek_to_end", required = 1)
   public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject partitions) {
-    RubyArray tpa = partitions.convertToArray();
-    List<TopicPartition> tpl = new ArrayList<>(tpa.size());
-    for (IRubyObject tp : (List<IRubyObject>) tpa.getList()) {
-      tpl.add(TopicPartitionWrapper.toTopicPartition(ctx, tp));
-    }
-    kafkaConsumer.seekToEnd(tpl);
+    kafkaConsumer.seekToEnd(toTopicPartitionList(ctx, partitions));
     return ctx.runtime.getNil();
   }
 
@@ -226,5 +225,11 @@ public class ConsumerWrapper extends RubyObject {
       array.append(TopicPartitionWrapper.create(ctx.runtime, topicPartition));
     }
     return array;
+  }
+
+  @JRubyMethod(required = 1)
+  public IRubyObject assign(ThreadContext ctx, IRubyObject partitions) {
+    kafkaConsumer.assign(toTopicPartitionList(ctx, partitions));
+    return ctx.runtime.getNil();
   }
 }

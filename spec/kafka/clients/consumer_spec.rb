@@ -310,11 +310,19 @@ module Kafka
         end
 
         context 'after manual assignment' do
-          it 'returns an enumerable of TopicPartitions', :pending do
+          it 'returns an enumerable of TopicPartitions' do
             topic_partitions = topic_names.map { |name| TopicPartition.new(name, 0) }
             consumer.assign(topic_partitions)
-            expect(consumer.assignment.to_a).to eq(topic_partitions)
+            expect(consumer.assignment.to_a).to contain_exactly(*topic_partitions)
           end
+        end
+      end
+
+      describe '#assign' do
+        it 'explicitly assigns partitions to the consumer' do
+          topic_partitions = topic_names.map { |name| TopicPartition.new(name, 0) }
+          consumer.assign(topic_partitions)
+          expect(consumer.assignment.to_a).to contain_exactly(*topic_partitions)
         end
       end
     end
