@@ -145,6 +145,16 @@ public class ConsumerWrapper extends RubyObject {
   }
 
   @JRubyMethod
+  public IRubyObject subscription(ThreadContext ctx) {
+    Set<String> topicNames = kafkaConsumer.subscription();
+    RubyArray topics = ctx.runtime.newArray(topicNames.size());
+    for (String topicName : topicNames) {
+      topics.append(ctx.runtime.newString(topicName));
+    }
+    return topics;
+  }
+
+  @JRubyMethod
   public IRubyObject unsubscribe(ThreadContext ctx) {
     kafkaConsumer.unsubscribe();
     return ctx.runtime.getNil();

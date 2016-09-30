@@ -75,6 +75,33 @@ module Kafka
         end
       end
 
+      describe '#subscription' do
+        context 'before the consumer subscribes' do
+          it 'returns an empty enumerable' do
+            subscription = consumer.subscription
+            expect(subscription).to be_empty
+          end
+        end
+
+        context 'after the consumer has subscribed' do
+          context 'to explicit of topics' do
+            it 'returns the topics that the consumer is subscribed to' do
+              consumer.subscribe(topic_names)
+              subscription = consumer.subscription
+              expect(subscription).to contain_exactly(*topic_names)
+            end
+          end
+
+          context 'to a topic pattern' do
+            it 'returns an empty enumerable' do
+              consumer.subscribe("#{topic_names.first[0..-2]}.*")
+              subscription = consumer.subscription
+              expect(subscription).to be_empty
+            end
+          end
+        end
+      end
+
       describe '#unsubscribe' do
         it 'unsubscribes the consumer' do
           consumer.subscribe(topic_names)
