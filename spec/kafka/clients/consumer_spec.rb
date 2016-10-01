@@ -414,6 +414,17 @@ module Kafka
           expect(paused).to be_empty
         end
       end
+
+      describe '#wakeup' do
+        it 'makes #poll throw a WakeupError' do
+          poller_thread = Thread.start do
+            consumer.subscribe('foo.*')
+            consumer.poll(5)
+          end
+          consumer.wakeup
+          expect { poller_thread.value }.to raise_error(WakeupError)
+        end
+      end
     end
   end
 end

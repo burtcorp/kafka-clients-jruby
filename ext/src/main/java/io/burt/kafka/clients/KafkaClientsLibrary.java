@@ -7,6 +7,8 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.InvalidGroupIdException;
 import org.apache.kafka.common.errors.RecordTooLargeException;
+import org.apache.kafka.common.errors.WakeupException;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -38,6 +40,7 @@ public class KafkaClientsLibrary implements Library {
     parentModule.defineClassUnder("ConfigError", apiExceptionClass, standardErrorClass.getAllocator());
     parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
     parentModule.defineClassUnder("InvalidGroupIdError", kafkaErrorClass, standardErrorClass.getAllocator());
+    parentModule.defineClassUnder("WakeupError", kafkaErrorClass, standardErrorClass.getAllocator());
     parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
   }
 
@@ -49,6 +52,8 @@ public class KafkaClientsLibrary implements Library {
       type = "Kafka::Clients::RecordTooLargeError";
     } else if (t instanceof InvalidGroupIdException) {
       type = "Kafka::Clients::InvalidGroupIdError";
+    } else if (t instanceof WakeupException) {
+      type = "Kafka::Clients::WakeupError";
     } else if (t instanceof ApiException) {
       type = "Kafka::Clients::ApiError";
     } else if (t instanceof KafkaException) {

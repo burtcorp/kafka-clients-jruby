@@ -352,6 +352,7 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod
   public IRubyObject wakeup(ThreadContext ctx) {
+    kafkaConsumer.wakeup();
     return ctx.runtime.getNil();
   }
 }
