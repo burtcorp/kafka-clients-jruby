@@ -8,6 +8,8 @@
 /ext/.classpath
 /ext/.project
 /ext/.settings
+/ext/.idea
+/ext/*.iml
 /lib/kafka/clients/ext
 /tmp
 /pkg
