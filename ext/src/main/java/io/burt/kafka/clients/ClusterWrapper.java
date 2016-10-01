@@ -160,7 +160,7 @@ public class ClusterWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "bootstrap_configured?")
-  public IRubyObject isBootstrapConfigured(ThreadContext ctx) {
+  public IRubyObject isBootstrapConfigured() {
     return bootstrapConfigured;
   }
 

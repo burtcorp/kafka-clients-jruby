@@ -83,7 +83,7 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod(required = 2, optional = 3)
-  public IRubyObject initialize(ThreadContext ctx, IRubyObject[] args) {
+  public IRubyObject initialize(IRubyObject[] args) {
     this.record = toProducerRecord(args);
     return this;
   }
@@ -104,12 +104,12 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject key(ThreadContext ctx) {
+  public IRubyObject key() {
     return record.key();
   }
 
   @JRubyMethod
-  public IRubyObject value(ThreadContext ctx) {
+  public IRubyObject value() {
     return record.value();
   }
 

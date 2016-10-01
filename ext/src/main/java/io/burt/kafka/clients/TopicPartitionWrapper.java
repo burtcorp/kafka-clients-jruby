@@ -70,12 +70,12 @@ public class TopicPartitionWrapper extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject topic(ThreadContext ctx) {
+  public IRubyObject topic() {
     return topic;
   }
 
   @JRubyMethod
-  public IRubyObject partition(ThreadContext ctx) {
+  public IRubyObject partition() {
     return partition;
   }
 

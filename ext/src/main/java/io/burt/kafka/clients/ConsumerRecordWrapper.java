@@ -70,12 +70,12 @@ public class ConsumerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject key(ThreadContext ctx) {
+  public IRubyObject key() {
     return record.key();
   }
 
   @JRubyMethod
-  public IRubyObject value(ThreadContext ctx) {
+  public IRubyObject value() {
     return record.value();
   }
 

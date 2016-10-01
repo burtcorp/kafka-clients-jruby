@@ -53,7 +53,7 @@ public class OffsetAndMetadataWrapper extends RubyObject {
   }
 
   @JRubyMethod(required = 2)
-  public IRubyObject initialize(ThreadContext ctx, IRubyObject offset, IRubyObject metadata) {
+  public IRubyObject initialize(IRubyObject offset, IRubyObject metadata) {
     this.offset = offset;
     this.metadata = metadata;
     this.offsetAndMetadata = new OffsetAndMetadata((int) offset.convertToInteger().getLongValue(), metadata.convertToString().asJavaString());
@@ -61,12 +61,12 @@ public class OffsetAndMetadataWrapper extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject offset(ThreadContext ctx) {
+  public IRubyObject offset() {
     return offset;
   }
 
   @JRubyMethod
-  public IRubyObject metadata(ThreadContext ctx) {
+  public IRubyObject metadata() {
     return metadata;
   }
 
