@@ -372,6 +372,48 @@ module Kafka
           expect(partitions[0]).to be_a(PartitionInfo)
         end
       end
+
+      describe '#pause' do
+        include_context 'available_records'
+
+        it '' do
+          consumer.pause(consumer.assignment)
+          consumer_records = consumer.poll(1)
+          expect(consumer_records).to be_empty
+        end
+      end
+
+      describe '#paused' do
+        context 'when the consumer has not been paused' do
+          it 'returns an empty enumerable' do
+            paused = consumer.paused
+            expect(paused).to be_empty
+          end
+        end
+
+        context 'when the consumer has been paused' do
+          include_context 'available_records'
+
+          it 'returns the paused partitions' do
+            assignment = consumer.assignment
+            consumer.pause(assignment.dup)
+            paused = consumer.paused
+            expect(paused).to contain_exactly(*assignment)
+          end
+        end
+      end
+
+      describe '#resume' do
+        include_context 'available_records'
+
+        it 'unpauses paused partitions' do
+          assignment = consumer.assignment
+          consumer.pause(assignment.dup)
+          consumer.resume(assignment.dup)
+          paused = consumer.paused
+          expect(paused).to be_empty
+        end
+      end
     end
   end
 end

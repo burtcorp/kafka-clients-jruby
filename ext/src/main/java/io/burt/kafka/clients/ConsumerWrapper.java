@@ -313,4 +313,45 @@ public class ConsumerWrapper extends RubyObject {
     }
     return topics;
   }
+
+  @JRubyMethod
+  public IRubyObject paused(ThreadContext ctx) {
+    Collection<TopicPartition> pausedPartitions = kafkaConsumer.paused();
+    RubyArray paused = ctx.runtime.newArray(pausedPartitions.size());
+    for (TopicPartition tp : pausedPartitions) {
+      paused.append(TopicPartitionWrapper.create(ctx.runtime, tp));
+    }
+    return paused;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<TopicPartition> toTopicPartitions(ThreadContext ctx, IRubyObject arg) {
+    Set<TopicPartition> topicPartitions = new HashSet<>();
+    RubyArray partitions= arg.convertToArray();
+    for (IRubyObject tp : (List<IRubyObject>) partitions.getList()) {
+      if (tp instanceof TopicPartitionWrapper) {
+        topicPartitions.add(((TopicPartitionWrapper) tp).topicPartition());
+      } else {
+        throw ctx.runtime.newTypeError(tp, "Kafka::Clients::TopicPartition");
+      }
+    }
+    return topicPartitions;
+  }
+
+  @JRubyMethod
+  public IRubyObject pause(ThreadContext ctx, IRubyObject partitions) {
+    kafkaConsumer.pause(toTopicPartitions(ctx, partitions));
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject resume(ThreadContext ctx, IRubyObject partitions) {
+    kafkaConsumer.resume(toTopicPartitions(ctx, partitions));
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject wakeup(ThreadContext ctx) {
+    return ctx.runtime.getNil();
+  }
 }
