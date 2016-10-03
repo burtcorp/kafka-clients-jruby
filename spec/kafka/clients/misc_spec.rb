@@ -101,10 +101,13 @@ module Kafka
     end
 
     describe RecordMetadata do
-      include_context 'producer_consumer'
+      include_context 'config'
 
       let :record_metadata do
-        producer.send(ProducerRecord.new(topic_names.first, 'hello world')).get
+        serializer = Java::IoBurtKafkaClients::RubyStringSerializer.new
+        mock_producer = Java::OrgApacheKafkaClientsProducer::MockProducer.new(true, serializer, serializer)
+        producer = Java::IoBurtKafkaClients::ProducerWrapper.create(JRuby.runtime, mock_producer)
+        producer.send(topic_names.first, 'hello', 'world').get
       end
 
       describe '#to_s' do
