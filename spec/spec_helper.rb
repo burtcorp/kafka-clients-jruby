@@ -2,6 +2,8 @@
 
 require 'kreps/silent'
 require 'kafka/clients'
-require 'kafka/clients/shared'
 require 'fileutils'
 require 'tmpdir'
+
+require 'kafka/clients/shared'
+require 'integration/shared'

@@ -395,7 +395,7 @@ module Kafka
       describe '#pause' do
         include_context 'available_records'
 
-        it '' do
+        it 'no longer fetches records for the specified partitions' do
           consumer.pause(consumer.assignment)
           consumer_records = consumer.poll(1)
           expect(consumer_records).to be_empty
