@@ -13,7 +13,7 @@ cache:
   directories:
     - $HOME/.m2
 before_script:
-  - docker-compose -p kafka-clients-jruby -f spec/resources/docker-compose.yml up -d
+  - docker-compose up -d
 script: bundle exec rake
 rvm:
   - jruby-9.1.2.0
