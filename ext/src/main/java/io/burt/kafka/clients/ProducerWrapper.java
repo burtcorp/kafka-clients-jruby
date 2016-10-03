@@ -178,8 +178,11 @@ public class ProducerWrapper extends RubyObject {
   @JRubyMethod(name = "partitions_for")
   public IRubyObject partitionsFor(ThreadContext ctx, IRubyObject topic) {
     RubyArray partitions = ctx.runtime.newArray();
-    for (PartitionInfo partition : kafkaProducer.partitionsFor(topic.asJavaString())) {
-      partitions.add(PartitionInfoWrapper.create(ctx.runtime, partition));
+    List<PartitionInfo> partitionInfos = kafkaProducer.partitionsFor(topic.asJavaString());
+    if (partitionInfos != null) {
+      for (PartitionInfo partition : partitionInfos) {
+        partitions.add(PartitionInfoWrapper.create(ctx.runtime, partition));
+      }
     }
     return partitions;
   }
