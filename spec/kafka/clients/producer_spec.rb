@@ -23,12 +23,12 @@ module Kafka
         context 'when given a config with symbolic keys' do
           it 'understands that :bootstrap_servers is an alias for bootstrap.servers' do
             config[:bootstrap_servers] = config.delete('bootstrap.servers')
-            expect(producer.partitions_for('topictopic')).to_not be_empty
+            expect(producer.partitions_for(topic_names.first)).to_not be_empty
           end
 
           it 'allows :bootstrap_servers to be an array' do
             config[:bootstrap_servers] = [config.delete('bootstrap.servers')] * 3
-            expect(producer.partitions_for('topictopic')).to_not be_empty
+            expect(producer.partitions_for(topic_names.first)).to_not be_empty
           end
         end
       end
@@ -59,48 +59,105 @@ module Kafka
       end
 
       describe '#send' do
+        def consume_records(topic_name_or_partition)
+          case topic_name_or_partition
+          when TopicPartition
+            consumer.assign([topic_name_or_partition])
+          else
+            consumer.subscribe([topic_name_or_partition])
+            consumer.poll(0)
+          end
+          consumer.seek_to_beginning(consumer.assignment)
+          consumer.poll(1)
+        end
+
         it 'sends a message to Kafka' do
-          future = producer.send('topictopic', 'hello world')
+          future = producer.send(topic_names.first, 'hello world')
           future.get(timeout: 5)
+          consumer_records = consume_records(topic_names.first)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.value).to eq('hello world')
+          end
         end
 
         it 'sends a message with both a key and a value' do
-          future = producer.send('topictopic', 'hello', 'world')
+          future = producer.send(topic_names.first, 'hello', 'world')
           future.get(timeout: 5)
+          consumer_records = consume_records(topic_names.first)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.key).to eq('hello')
+            expect(consumer_records.first.value).to eq('world')
+          end
         end
 
         it 'sends a message a pre-partitioned message' do
-          future = producer.send('topictopic', 0, 'hello', 'world')
+          future = producer.send(topic_names.first, 0, 'hello', 'world')
           future.get(timeout: 5)
+          consumer_records = consume_records(TopicPartition.new(topic_names.first, 0))
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.key).to eq('hello')
+            expect(consumer_records.first.value).to eq('world')
+          end
         end
 
         it 'sends a message with a specified timestamp (as a Time)' do
-          future = producer.send('topictopic', 0, Time.now, 'hello', 'world')
+          t = Time.now
+          future = producer.send(topic_names.first, 0, t, 'hello', 'world')
           future.get(timeout: 5)
+          consumer_records = consume_records(topic_names.first)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.timestamp).to eq(t)
+          end
         end
 
         it 'sends a message with a specified timestamp (as float)' do
-          future = producer.send('topictopic', 0, Time.now.to_f, 'hello', 'world')
+          t = Time.now
+          future = producer.send(topic_names.first, 0, t.to_f, 'hello', 'world')
           future.get(timeout: 5)
+          consumer_records = consume_records(topic_names.first)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.timestamp).to eq(t)
+          end
         end
 
         it 'sends a message with a specified timestamp (as an integer)' do
-          future = producer.send('topictopic', 0, Time.now.to_i, 'hello', 'world')
+          t = Time.now
+          future = producer.send(topic_names.first, 0, t.to_i, 'hello', 'world')
           future.get(timeout: 5)
+          consumer_records = consume_records(topic_names.first)
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.timestamp.to_i).to eq(t.to_i)
+          end
         end
 
         it 'sends a message with a pre-created ProducerRecord' do
-          future = producer.send(ProducerRecord.new('topictopic', 0, Time.now.to_i, 'hello', 'world'))
+          t = Time.now
+          future = producer.send(ProducerRecord.new(topic_names.first, 0, t, 'hello', 'world'))
           future.get(timeout: 5)
+          consumer_records = consume_records(TopicPartition.new(topic_names.first, 0))
+          aggregate_failures do
+            expect(consumer_records.count).to eq(1)
+            expect(consumer_records.first.topic).to eq(topic_names.first)
+            expect(consumer_records.first.partition).to eq(0)
+            expect(consumer_records.first.key).to eq('hello')
+            expect(consumer_records.first.value).to eq('world')
+            expect(consumer_records.first.timestamp).to eq(t)
+          end
         end
 
         it 'returns a future that resolves to a record metadata object describing the saved record' do
-          metadata = producer.send('topictopic', 'hello', 'world').get(timeout: 5)
+          metadata = producer.send(topic_names.first, 'hello', 'world').get(timeout: 5)
           aggregate_failures do
             expect(metadata.offset).to be_a(Fixnum)
             expect(metadata.partition).to be_a(Fixnum)
             expect(metadata.timestamp).to be_within(5).of(Time.now)
-            expect(metadata.topic).to eq('topictopic')
+            expect(metadata.topic).to eq(topic_names.first)
             expect(metadata.checksum).to be_a(Fixnum)
             expect(metadata.serialized_key_size).to be_a(Fixnum)
             expect(metadata.serialized_value_size).to be_a(Fixnum)
@@ -109,7 +166,7 @@ module Kafka
 
         it 'accepts a block that will be called when the record has been saved' do
           block_called = false
-          future = producer.send('topictopic', 'hello', 'world') do
+          future = producer.send(topic_names.first, 'hello', 'world') do
             block_called = true
           end
           future.get(timeout: 5)
@@ -118,28 +175,28 @@ module Kafka
 
         it 'passes the metadata to the block' do
           metadata = nil
-          future = producer.send('topictopic', 'hello', 'world') do |md|
+          future = producer.send(topic_names.first, 'hello', 'world') do |md|
             metadata = md
           end
           future.get(timeout: 5)
-          expect(metadata.topic).to eq('topictopic')
+          expect(metadata.topic).to eq(topic_names.first)
         end
 
         context 'when specifying a partition that does not exist' do
           it 'raises ArgumentError' do
-            expect { producer.send('topictopic', 99, 'hello', 'world') }.to raise_error(ArgumentError, /99 is not in the range/)
+            expect { producer.send(topic_names.first, 99, 'hello', 'world') }.to raise_error(ArgumentError, /99 is not in the range/)
           end
         end
 
         context 'when an error occurs during sending' do
           it 'returns a future that raises an error when resolved' do
-            future = producer.send('topictopic', 'hello', '!' * (1024 * 1024 + 1))
+            future = producer.send(topic_names.first, 'hello', '!' * (1024 * 1024 + 1))
             expect { future.get(timeout: 5) }.to raise_error(Kafka::Clients::RecordTooLargeError)
           end
 
           it 'yields the error to the block' do
             yielded_error = nil
-            future = producer.send('topictopic', 'hello', '!' * (1024 * 1024 + 1)) do |_, error|
+            future = producer.send(topic_names.first, 'hello', '!' * (1024 * 1024 + 1)) do |_, error|
               yielded_error = error
             end
             future.get(timeout: 5) rescue nil
@@ -162,13 +219,13 @@ module Kafka
           end
 
           it 'uses the partitioner when sending records' do
-            future = producer.send('topictopic', 'hello', 'world')
+            future = producer.send(topic_names.first, 'hello', 'world')
             future.get(timeout: 5)
-            expect(partitioner).to have_received(:partition).with('topictopic', 'hello', 'world', instance_of(Cluster))
+            expect(partitioner).to have_received(:partition).with(topic_names.first, 'hello', 'world', instance_of(Cluster))
           end
 
           it 'does not use the partitioner when sending a pre-partitioned record' do
-            future = producer.send('topictopic', 1, 'hello', 'world')
+            future = producer.send(topic_names.first, 1, 'hello', 'world')
             future.get(timeout: 5)
             expect(partitioner).to_not have_received(:partition)
           end
@@ -179,9 +236,9 @@ module Kafka
               cluster = c
               0
             end
-            future = producer.send('topictopic', 'hello', 'world')
+            future = producer.send(topic_names.first, 'hello', 'world')
             future.get(timeout: 5)
-            partitions = producer.partitions_for('topictopic')
+            partitions = producer.partitions_for(topic_names.first)
             partition = partitions.first
             aggregate_failures do
               expect(cluster.nodes).to_not be_empty
@@ -209,10 +266,10 @@ module Kafka
 
       describe '#partitions_for' do
         it 'returns partitions for a topic' do
-          partitions = producer.partitions_for('topictopic')
+          partitions = producer.partitions_for(topic_names.first)
           partition = partitions.first
           aggregate_failures do
-            expect(partition.topic).to eq('topictopic')
+            expect(partition.topic).to eq(topic_names.first)
             expect(partition.partition).to be_a(Fixnum)
             expect(partition.leader.host).to be_a(String)
             expect(partition.leader.port).to be_a(Fixnum)
