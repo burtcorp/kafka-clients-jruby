@@ -148,6 +148,20 @@ module Kafka
           future.get
           expect(metadata.topic).to eq('toptopic')
         end
+
+        context 'when there is an error while sending a message' do
+          let :complete_sends_immediately do
+            false
+          end
+
+          context 'returns a future that' do
+            it 'raises an error when resolved' do
+              future = producer.send('toptopic', 'bork')
+              mock_producer.error_next(Java::OrgApacheKafkaCommonErrors::AuthorizationException.new('No soup for you'))
+              expect { future.get }.to raise_error(Kafka::Clients::ApiError, 'No soup for you')
+            end
+          end
+        end
       end
 
       describe '#flush' do
