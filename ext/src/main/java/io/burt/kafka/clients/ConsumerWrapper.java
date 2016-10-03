@@ -96,6 +96,15 @@ public class ConsumerWrapper extends RubyObject {
     return ctx.runtime.getNil();
   }
 
+  @JRubyMethod(name = "partitions_for")
+  public IRubyObject partitionsFor(ThreadContext ctx, IRubyObject topic) {
+    RubyArray partitions = ctx.runtime.newArray();
+    for (PartitionInfo partition : kafkaConsumer.partitionsFor(topic.asJavaString())) {
+      partitions.add(PartitionInfoWrapper.create(ctx.runtime, partition));
+    }
+    return partitions;
+  }
+
   private ConsumerRebalanceListener createListener(final ThreadContext ctx, final IRubyObject listener) {
     return new ConsumerRebalanceListener() {
       @Override

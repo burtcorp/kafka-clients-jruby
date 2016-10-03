@@ -45,6 +45,25 @@ module Kafka
         end
       end
 
+      describe '#partitions_for' do
+        it 'returns partitions for a topic' do
+          partitions = producer.partitions_for(topic_names.first)
+          partition = partitions.first
+          aggregate_failures do
+            expect(partition.topic).to eq(topic_names.first)
+            expect(partition.partition).to be_a(Fixnum)
+            expect(partition.leader.host).to be_a(String)
+            expect(partition.leader.port).to be_a(Fixnum)
+            expect(partition.leader.id).to be_a(Fixnum)
+            expect(partition.leader).to_not have_rack
+            expect(partition.leader.rack).to be_nil
+            expect(partition.leader).to_not be_empty
+            expect(partition.replicas).to include(partition.leader)
+            expect(partition.in_sync_replicas).to include(partition.leader)
+          end
+        end
+      end
+
       describe '#subscribe' do
         it 'subscribes the consumer to the specified topics' do
           consumer.subscribe(topic_names)
