@@ -41,7 +41,12 @@ public class ConsumerWrapper extends RubyObject {
   private Consumer<IRubyObject, IRubyObject> kafkaConsumer;
 
   public ConsumerWrapper(Ruby runtime, RubyClass metaClass) {
+    this(runtime, metaClass, null);
+  }
+
+  public ConsumerWrapper(Ruby runtime, RubyClass metaClass, Consumer<IRubyObject, IRubyObject> consumer) {
     super(runtime, metaClass);
+    this.kafkaConsumer = consumer;
   }
 
   private static class ConsumerAllocator implements ObjectAllocator {
@@ -54,6 +59,12 @@ public class ConsumerWrapper extends RubyObject {
     RubyClass cls = parentModule.defineClassUnder("Consumer", runtime.getObject(), new ConsumerAllocator());
     cls.defineAnnotatedMethods(ConsumerWrapper.class);
     return cls;
+  }
+
+  static ConsumerWrapper create(Ruby runtime, Consumer<IRubyObject, IRubyObject> consumer) {
+    JRubyClass annotation = ConsumerWrapper.class.getAnnotation(JRubyClass.class);
+    RubyClass metaClass = (RubyClass) runtime.getClassFromPath(annotation.name()[0]);
+    return new ConsumerWrapper(runtime, metaClass, consumer);
   }
 
   @SuppressWarnings("unchecked")
@@ -79,15 +90,21 @@ public class ConsumerWrapper extends RubyObject {
     return kafkaConfig;
   }
 
-  @JRubyMethod(required = 1)
-  public IRubyObject initialize(ThreadContext ctx, IRubyObject config) {
-    try {
-      Deserializer<IRubyObject> deserializer = new RubyStringDeserializer(ctx.runtime);
-      kafkaConsumer = new KafkaConsumer<>(convertKafkaOptions(ctx, config), deserializer, deserializer);
-      return this;
-    } catch (KafkaException ke) {
-      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
+  @JRubyMethod(optional = 1)
+  public IRubyObject initialize(ThreadContext ctx, IRubyObject[] args) {
+    if (kafkaConsumer == null) {
+      if (args.length > 0) {
+        try {
+          Deserializer<IRubyObject> deserializer = new RubyStringDeserializer(ctx.runtime);
+          kafkaConsumer = new KafkaConsumer<>(convertKafkaOptions(ctx, args[0]), deserializer, deserializer);
+        } catch (KafkaException ke) {
+          throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
+        }
+      } else {
+        throw ctx.runtime.newArgumentError(0, 1);
+      }
     }
+    return this;
   }
 
   @JRubyMethod
