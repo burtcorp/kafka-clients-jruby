@@ -57,6 +57,11 @@ public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> 
     return future.isDone();
   }
 
+  @JRubyMethod(name = "done?")
+  public IRubyObject isDoneRb(ThreadContext ctx) {
+    return ctx.runtime.newBoolean(isDone());
+  }
+
   @Override
   public IRubyObject get() throws InterruptedException, ExecutionException {
     return rubifier.transform(future.get());
