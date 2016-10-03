@@ -25,10 +25,16 @@ module Kafka
     end
 
     describe PartitionInfo do
-      include_context 'producer_consumer'
+      include_context 'config'
 
       let :partition_info do
-        producer.partitions_for(topic_names.first)[0]
+        offset_strategy = Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE
+        mock_consumer = Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(offset_strategy)
+        consumer = Java::IoBurtKafkaClients::ConsumerWrapper.create(JRuby.runtime, mock_consumer)
+        leader = Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234)
+        partition_info = Java::OrgApacheKafkaCommon::PartitionInfo.new(topic_names.first, 1, leader, [leader], [leader])
+        mock_consumer.update_partitions(topic_names.first, [partition_info])
+        consumer.partitions_for(topic_names.first).first
       end
 
       describe '#to_s' do

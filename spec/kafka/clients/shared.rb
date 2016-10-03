@@ -1,14 +1,6 @@
 module Kafka
   module Clients
-    shared_context 'producer_consumer' do
-      let :consumer do
-        Kafka::Clients::Consumer.new(config)
-      end
-
-      let :producer do
-        Kafka::Clients::Producer.new(config)
-      end
-
+    shared_context 'config' do
       let :consumer_id do
         (Time.now.to_f * 1000).to_i.to_s
       end
@@ -26,7 +18,21 @@ module Kafka
       end
     end
 
+    shared_context 'producer_consumer' do
+      include_context 'config'
+
+      let :consumer do
+        Kafka::Clients::Consumer.new(config)
+      end
+
+      let :producer do
+        Kafka::Clients::Producer.new(config)
+      end
+    end
+
     shared_context 'available_records' do
+      include_context 'producer_consumer'
+
       let :rebalance_listener do
         listener = double(:rebalance_listener)
         assigned_partitions = []
