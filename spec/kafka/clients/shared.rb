@@ -2,7 +2,7 @@ module Kafka
   module Clients
     shared_context 'producer_consumer' do
       let :consumer do
-        described_class.new(config)
+        Kafka::Clients::Consumer.new(config)
       end
 
       let :producer do
@@ -17,6 +17,7 @@ module Kafka
         {
           'bootstrap.servers' => 'localhost:19091',
           'group.id' => 'kafka-client-jruby-' << consumer_id,
+          'max.block.ms' => 5000,
         }
       end
 
@@ -55,6 +56,11 @@ module Kafka
         if consumer.assignment.empty?
           raise 'No partitions assigned'
         end
+      end
+
+      after do
+        producer.close rescue nil
+        consumer.close rescue nil
       end
     end
   end

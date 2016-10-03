@@ -3,20 +3,7 @@
 module Kafka
   module Clients
     describe Producer do
-      let :producer do
-        described_class.new(config)
-      end
-
-      let :config do
-        {
-          'bootstrap.servers' => 'localhost:19091',
-          'max.block.ms' => 5000,
-        }
-      end
-
-      after do
-        producer.close rescue nil
-      end
+      include_context 'producer_consumer'
 
       describe '#initialize' do
         it 'creates and configures the producer' do
