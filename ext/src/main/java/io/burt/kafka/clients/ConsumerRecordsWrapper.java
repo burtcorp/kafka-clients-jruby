@@ -35,7 +35,7 @@ public class ConsumerRecordsWrapper extends RubyObject {
     return new ConsumerRecordsWrapper(runtime, (RubyClass) runtime.getClassFromPath("Kafka::Clients::ConsumerRecords"), records);
   }
 
-  @JRubyMethod
+  @JRubyMethod(alias = {"size"})
   public IRubyObject count(ThreadContext ctx) {
     return ctx.runtime.newFixnum(records.count());
   }
