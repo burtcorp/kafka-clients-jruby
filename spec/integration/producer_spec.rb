@@ -258,12 +258,6 @@ module Kafka
         end
       end
 
-      describe '#flush' do
-        it 'flushes' do
-          producer.flush
-        end
-      end
-
       describe '#partitions_for' do
         it 'returns partitions for a topic' do
           partitions = producer.partitions_for(topic_names.first)
