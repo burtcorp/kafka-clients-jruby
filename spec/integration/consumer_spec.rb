@@ -143,6 +143,7 @@ module Kafka
               expect(consumer_records.first).to be_a(ConsumerRecord)
               expect(consumer_records.first.topic).to eq(topic_names.first)
               expect(consumer_records.first.partition).to be_a(Fixnum)
+              expect(consumer_records.first.offset).to be_a(Fixnum)
               expect(consumer_records.first.checksum).to be_a(Fixnum)
               expect(consumer_records.first.key).to match(/\Ahello\d+\Z/)
               expect(consumer_records.first.value).to match(/\Aworld\d+\Z/)

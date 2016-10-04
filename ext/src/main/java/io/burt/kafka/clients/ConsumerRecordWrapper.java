@@ -20,6 +20,7 @@ public class ConsumerRecordWrapper extends RubyObject {
 
   private IRubyObject topic;
   private IRubyObject partition;
+  private IRubyObject offset;
   private IRubyObject checksum;
   private IRubyObject timestamp;
 
@@ -60,6 +61,14 @@ public class ConsumerRecordWrapper extends RubyObject {
       partition = ctx.runtime.newFixnum(record.partition());
     }
     return partition;
+  }
+
+  @JRubyMethod
+  public IRubyObject offset(ThreadContext ctx) {
+    if (offset == null) {
+      offset = ctx.runtime.newFixnum(record.offset());
+    }
+    return offset;
   }
 
   @JRubyMethod
