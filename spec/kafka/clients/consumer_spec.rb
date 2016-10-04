@@ -100,6 +100,55 @@ module Kafka
           end
         end
       end
+
+      describe '#poll' do
+        before do
+          consumer.subscribe(%w[toptopic])
+          mock_consumer.rebalance(partitions)
+          mock_consumer.update_beginning_offsets(Hash[partitions.map { |p| [p, 0] }])
+          consumer.seek_to_beginning(partitions.map { |p| TopicPartition.new(p.topic, p.partition) })
+        end
+
+        let :partitions do
+          [
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 1),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
+          ]
+        end
+
+        context 'when there are records available' do
+          before do
+            10.times do |i|
+              k = sprintf('hello%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
+              v = sprintf('world%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
+              r = Java::OrgApacheKafkaClientsConsumer::ConsumerRecord.new('toptopic', i % 3, i + 9, k, v)
+              mock_consumer.add_record(r)
+            end
+          end
+
+          it 'returns an enumerable of records' do
+            consumer_records = consumer.poll(0)
+            record = consumer_records.find { |r| r.offset == 12 }
+            aggregate_failures do
+              expect(consumer_records.size).to eq(10)
+              expect(record.topic).to eq('toptopic')
+              expect(record.offset).to eq(12)
+              expect(record.checksum).to be_a(Fixnum)
+              expect(record.key).to eq('hello3')
+              expect(record.value).to eq('world3')
+              expect(record.timestamp).to be_a(Time)
+              expect(record.timestamp_type).to eq(:no_timestamp_type)
+            end
+          end
+        end
+
+        context 'when there are no records available' do
+          it 'returns an empty enumerable' do
+            expect(consumer.poll(0)).to be_empty
+          end
+        end
+      end
     end
   end
 end
