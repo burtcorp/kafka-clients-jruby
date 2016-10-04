@@ -158,7 +158,7 @@ module Kafka
             it 'raises an error when resolved' do
               future = producer.send('toptopic', 'bork')
               mock_producer.error_next(Java::OrgApacheKafkaCommonErrors::AuthorizationException.new('No soup for you'))
-              expect { future.get }.to raise_error(Kafka::Clients::ApiError, 'No soup for you')
+              expect { future.get }.to raise_error(Kafka::Clients::AuthorizationError, 'No soup for you')
             end
           end
         end

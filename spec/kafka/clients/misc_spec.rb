@@ -1,6 +1,29 @@
 # encoding: utf-8
 
 module Kafka
+  describe Clients do
+    it 'dynamically generates error classes matching those in Kafka' do
+      aggregate_failures do
+        expect(described_class::AuthorizationError.ancestors).to include(described_class::KafkaError)
+        expect(described_class::BufferExhaustedError.ancestors).to include(described_class::KafkaError)
+        expect(described_class::CommitFailedError.ancestors).to include(described_class::KafkaError)
+        expect(described_class::ConfigError.ancestors).to include(described_class::KafkaError)
+        expect(described_class::InvalidOffsetError.ancestors).to include(described_class::KafkaError)
+      end
+    end
+
+    it 'makes ApiExceptions subclasses of ApiError' do
+      aggregate_failures do
+        expect(described_class::AuthorizationError.ancestors).to include(described_class::ApiError)
+        expect(described_class::UnsupportedVersionError.ancestors).to include(described_class::ApiError)
+      end
+    end
+
+    it 'does not generate an error class when there is no corresponding error in Kafka' do
+      expect { described_class::FuzzBazzError }.to raise_error(NameError)
+    end
+  end
+
   module Clients
     describe OffsetAndMetadata do
       let :offset_and_metadata do

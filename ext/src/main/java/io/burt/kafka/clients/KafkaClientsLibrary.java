@@ -36,32 +36,17 @@ public class KafkaClientsLibrary implements Library {
   private void installErrors(Ruby runtime, RubyModule parentModule) {
     RubyClass standardErrorClass = runtime.getStandardError();
     RubyClass kafkaErrorClass = parentModule.defineClassUnder("KafkaError", standardErrorClass, standardErrorClass.getAllocator());
-    RubyClass apiExceptionClass = parentModule.defineClassUnder("ApiError", kafkaErrorClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("ConfigError", apiExceptionClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("InvalidGroupIdError", kafkaErrorClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("WakeupError", kafkaErrorClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("RecordTooLargeError", apiExceptionClass, standardErrorClass.getAllocator());
+    parentModule.defineClassUnder("ApiError", kafkaErrorClass, standardErrorClass.getAllocator());
   }
 
   static RubyClass mapErrorClass(Ruby runtime, Throwable t) {
-    String type = "StandardError";
-    if (t instanceof ConfigException) {
-      type = "Kafka::Clients::ConfigError";
-    } else if (t instanceof RecordTooLargeException) {
-      type = "Kafka::Clients::RecordTooLargeError";
-    } else if (t instanceof InvalidGroupIdException) {
-      type = "Kafka::Clients::InvalidGroupIdError";
-    } else if (t instanceof WakeupException) {
-      type = "Kafka::Clients::WakeupError";
-    } else if (t instanceof ApiException) {
-      type = "Kafka::Clients::ApiError";
-    } else if (t instanceof KafkaException) {
-      type = "Kafka::Clients::KafkaError";
-    } else if (t instanceof TimeoutException) {
-      type = "Kafka::Clients::TimeoutError";
+    if (t instanceof KafkaException) {
+      String javaName = t.getClass().getSimpleName();
+      String rubyName = javaName.substring(0, javaName.length() - 9) + "Error";
+      return (RubyClass) runtime.getClassFromPath(String.format("Kafka::Clients::%s", rubyName));
+    } else {
+      return runtime.getStandardError();
     }
-    return (RubyClass) runtime.getClassFromPath(type);
   }
 
   static RaiseException newRaiseException(Ruby runtime, Throwable t) {
