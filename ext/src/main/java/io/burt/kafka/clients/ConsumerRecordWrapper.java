@@ -1,6 +1,7 @@
 package io.burt.kafka.clients;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.record.TimestampType;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -85,6 +86,12 @@ public class ConsumerRecordWrapper extends RubyObject {
       timestamp = ctx.runtime.newTime(record.timestamp());
     }
     return timestamp;
+  }
+
+  @JRubyMethod(name = "timestamp_type")
+  public IRubyObject timestamp_type(ThreadContext ctx) {
+    TimestampType type = record.timestampType();
+    return ctx.runtime.newSymbol(type.name().toLowerCase());
   }
 
   @JRubyMethod

@@ -67,7 +67,7 @@ module Kafka
           end
         end
 
-        it 'sends a message a pre-partitioned message' do
+        it 'sends a pre-partitioned message' do
           future = producer.send(topic_names.first, 0, 'hello', 'world')
           future.get(timeout: 5)
           consumer_records = consume_records(TopicPartition.new(topic_names.first, 0))
@@ -86,6 +86,7 @@ module Kafka
           aggregate_failures do
             expect(consumer_records.count).to eq(1)
             expect(consumer_records.first.timestamp).to eq(t)
+            expect(consumer_records.first.timestamp_type).to eq(:create_time)
           end
         end
 
@@ -97,6 +98,7 @@ module Kafka
           aggregate_failures do
             expect(consumer_records.count).to eq(1)
             expect(consumer_records.first.timestamp).to eq(t)
+            expect(consumer_records.first.timestamp_type).to eq(:create_time)
           end
         end
 
@@ -108,6 +110,7 @@ module Kafka
           aggregate_failures do
             expect(consumer_records.count).to eq(1)
             expect(consumer_records.first.timestamp.to_i).to eq(t.to_i)
+            expect(consumer_records.first.timestamp_type).to eq(:create_time)
           end
         end
 
@@ -123,6 +126,7 @@ module Kafka
             expect(consumer_records.first.key).to eq('hello')
             expect(consumer_records.first.value).to eq('world')
             expect(consumer_records.first.timestamp).to eq(t)
+            expect(consumer_records.first.timestamp_type).to eq(:create_time)
           end
         end
 
