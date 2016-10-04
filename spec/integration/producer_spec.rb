@@ -33,31 +33,6 @@ module Kafka
         end
       end
 
-      describe '#close' do
-        it 'closes the producer' do
-          producer.close(timeout: 5)
-        end
-
-        context 'when a custom partitioner is used' do
-          let :config do
-            super().merge(partitioner: partitioner)
-          end
-
-          let :partitioner do
-            double(:partitioner)
-          end
-
-          before do
-            allow(partitioner).to receive(:close)
-          end
-
-          it 'calls #close on the partitioner', pending: 'Partitioner#close doesn\'t seem to be called by KafkaProducer' do
-            producer.close
-            expect(partitioner).to have_received(:close)
-          end
-        end
-      end
-
       describe '#send' do
         def consume_records(topic_name_or_partition)
           case topic_name_or_partition

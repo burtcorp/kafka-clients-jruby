@@ -21,6 +21,22 @@ module Kafka
         true
       end
 
+      describe '#close' do
+        let :mock_producer do
+          double(:mock_producer, close: nil)
+        end
+
+        it 'closes the producer' do
+          producer.close
+          expect(mock_producer).to have_received(:close)
+        end
+
+        it 'accepts a timeout in seconds' do
+          producer.close(timeout: 5.3)
+          expect(mock_producer).to have_received(:close).with(5300, Java::JavaUtilConcurrent::TimeUnit::MILLISECONDS)
+        end
+      end
+
       describe '#send' do
         let :time do
           Time.utc(2016, 10, 3, 10, 27)
