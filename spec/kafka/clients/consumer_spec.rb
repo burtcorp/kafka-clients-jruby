@@ -69,6 +69,37 @@ module Kafka
           end
         end
       end
+
+      describe '#subscribe' do
+        let :mock_consumer do
+          double(:mock_consumer, subscribe: nil)
+        end
+
+        context 'when given a list of topic names' do
+          it 'subscribes to the specified topics' do
+            consumer.subscribe(%w[toptopic cipotpot])
+            expect(mock_consumer).to have_received(:subscribe).with(contain_exactly('toptopic', 'cipotpot'), anything)
+          end
+        end
+
+        context 'when given a single string' do
+          it 'subscribes to the topics matching the pattern' do
+            pattern = nil
+            allow(mock_consumer).to receive(:subscribe) do |p, _|
+              pattern = p
+            end
+            consumer.subscribe('toptopics.*')
+            aggregate_failures do
+              expect(pattern).to be_a(Java::JavaUtilRegex::Pattern)
+              expect(pattern.to_s).to eq('toptopics.*')
+            end
+          end
+
+          it 'raises ArgumentError when the string is not a valid regex' do
+            expect { consumer.subscribe(')$') }.to raise_error(ArgumentError)
+          end
+        end
+      end
     end
   end
 end

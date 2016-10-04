@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -157,16 +158,20 @@ public class ConsumerWrapper extends RubyObject {
     final IRubyObject topicNames = args[0];
     final IRubyObject listener = args.length > 1 ? args[1] : null;
     ConsumerRebalanceListener rebalanceListener = createListener(ctx, listener);
-    if (topicNames.respondsTo("to_a")) {
+    if (topicNames instanceof RubyString) { // TODO can this be done by not checking the Java class?
+      try {
+        Pattern topicPattern = Pattern.compile(topicNames.asJavaString());
+        kafkaConsumer.subscribe(topicPattern, rebalanceListener);
+      } catch (PatternSyntaxException pse) {
+        throw ctx.runtime.newArgumentError(String.format("Invalid topic pattern: %s", pse.getMessage()));
+      }
+    } else if (topicNames.respondsTo("to_a")) {
       RubyArray topicNamesArray = topicNames.callMethod(ctx, "to_a").convertToArray();
       Set<String> topics = new HashSet<>();
       for (IRubyObject topic : (List<IRubyObject>) topicNamesArray.getList()) {
         topics.add(topic.asString().asJavaString());
       }
       kafkaConsumer.subscribe(topics, rebalanceListener);
-    } else if (topicNames instanceof RubyString) { // TODO can this be done by not checking the Java class?
-      Pattern topicPattern = Pattern.compile(topicNames.asJavaString());
-      kafkaConsumer.subscribe(topicPattern, rebalanceListener);
     } else {
       throw ctx.runtime.newTypeError(topicNames, "Enumerable of topics or topic pattern");
     }
