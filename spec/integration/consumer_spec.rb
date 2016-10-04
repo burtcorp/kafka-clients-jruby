@@ -121,13 +121,6 @@ module Kafka
         end
       end
 
-      describe '#unsubscribe' do
-        it 'unsubscribes the consumer' do
-          consumer.subscribe(topic_names)
-          consumer.unsubscribe
-        end
-      end
-
       describe '#poll' do
         context 'when there are records available' do
           include_context 'available_records'

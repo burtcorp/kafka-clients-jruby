@@ -101,6 +101,17 @@ module Kafka
         end
       end
 
+      describe '#unsubscribe' do
+        let :mock_consumer do
+          double(:mock_consumer, unsubscribe: nil)
+        end
+
+        it 'unsubscribes from all topics' do
+          consumer.unsubscribe
+          expect(mock_consumer).to have_received(:unsubscribe)
+        end
+      end
+
       describe '#poll' do
         before do
           consumer.subscribe(%w[toptopic])
