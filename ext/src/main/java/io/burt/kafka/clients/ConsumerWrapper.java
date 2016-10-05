@@ -384,8 +384,12 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod
   public IRubyObject resume(ThreadContext ctx, IRubyObject partitions) {
-    kafkaConsumer.resume(toTopicPartitions(ctx, partitions));
-    return ctx.runtime.getNil();
+    try {
+      kafkaConsumer.resume(toTopicPartitions(ctx, partitions));
+      return ctx.runtime.getNil();
+    } catch (IllegalStateException ise) {
+      throw ctx.runtime.newArgumentError(ise.getMessage());
+    }
   }
 
   @JRubyMethod

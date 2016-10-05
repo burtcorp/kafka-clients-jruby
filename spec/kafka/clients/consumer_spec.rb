@@ -179,6 +179,7 @@ module Kafka
         let :kafka_partitions do
           [
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 1),
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
           ]
         end
@@ -192,14 +193,12 @@ module Kafka
         end
 
         it 'stops fetching records for the specified partitions' do
-          consumer.pause(partitions)
-          expect(kafka_consumer).to have_received(:pause).with(contain_exactly(*kafka_partitions))
+          consumer.pause(partitions.drop(1))
+          expect(kafka_consumer).to have_received(:pause).with(contain_exactly(*kafka_partitions.drop(1)))
         end
 
         context 'with partitions that are not assigned to the consumer' do
-          let :kafka_consumer do
-            Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
-          end
+          include_context 'kafka_mock_consumer'
 
           it 'raises an ArgumentError' do
             consumer.assign(partitions.drop(1))
@@ -227,6 +226,39 @@ module Kafka
 
         it 'returns an empty enumerable when there are no paused partitions' do
           expect(consumer.paused).to be_empty
+        end
+      end
+
+      describe '#resume' do
+        let :kafka_partitions do
+          [
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 1),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
+          ]
+        end
+
+        let :partitions do
+          kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
+        end
+
+        before do
+          allow(kafka_consumer).to receive(:resume)
+        end
+
+        it 'starts fetching records for the specified partitions' do
+          consumer.resume(partitions.drop(1))
+          expect(kafka_consumer).to have_received(:resume).with(contain_exactly(*kafka_partitions.drop(1)))
+        end
+
+        context 'with partitions that are not assigned to the consumer' do
+          include_context 'kafka_mock_consumer'
+
+          it 'raises an ArgumentError' do
+            consumer.assign(partitions.drop(1))
+            consumer.pause(partitions.drop(1))
+            expect { consumer.resume(partitions) }.to raise_error(ArgumentError)
+          end
         end
       end
     end
