@@ -13,6 +13,34 @@ module Kafka
         Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
       end
 
+      shared_context 'topics' do
+        let :kafka_partition_infos do
+          nodes = [
+            Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
+            Java::OrgApacheKafkaCommon::Node.new(234, 'lolcathost', 2345, 'b'),
+            Java::OrgApacheKafkaCommon::Node.new(345, 'lolcathost', 3456, 'c'),
+          ]
+          {
+            'toptopic' => [
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
+            ],
+            'tiptopic' => [
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
+              Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
+            ]
+          }
+        end
+
+        before do
+          kafka_partition_infos.each do |topic_name, partition_infos|
+            kafka_consumer.update_partitions(topic_name, partition_infos)
+          end
+        end
+      end
+
       describe '#close' do
         it 'closes the consumer' do
           consumer.close
@@ -21,22 +49,7 @@ module Kafka
       end
 
       describe '#partitions_for' do
-        let :kafka_partitions do
-          nodes = [
-            Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
-            Java::OrgApacheKafkaCommon::Node.new(234, 'lolcathost', 2345, 'b'),
-            Java::OrgApacheKafkaCommon::Node.new(345, 'lolcathost', 3456, 'c'),
-          ]
-          [
-            Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
-            Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
-            Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
-          ]
-        end
-
-        before do
-          kafka_consumer.update_partitions('toptopic', kafka_partitions)
-        end
+        include_context 'topics'
 
         it 'returns partitions for a topic' do
           partitions = consumer.partitions_for('toptopic')
@@ -56,8 +69,8 @@ module Kafka
         end
 
         context 'when there are no partitions' do
-          let :kafka_partitions do
-            []
+          let :kafka_partition_infos do
+            {}
           end
 
           it 'returns an empty enumerable' do
@@ -75,30 +88,7 @@ module Kafka
         end
 
         context 'when given a single string' do
-          let :kafka_partition_infos do
-            nodes = [
-              Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
-              Java::OrgApacheKafkaCommon::Node.new(234, 'lolcathost', 2345, 'b'),
-              Java::OrgApacheKafkaCommon::Node.new(345, 'lolcathost', 3456, 'c'),
-            ]
-            {
-              'toptopic' => [
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
-              ],
-              'tiptopic' => [
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
-                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
-              ]
-            }
-          end
-
-          before do
-            kafka_consumer.update_partitions('toptopic', kafka_partition_infos['toptopic'])
-            kafka_consumer.update_partitions('tiptopic', kafka_partition_infos['tiptopic'])
-          end
+          include_context 'topics'
 
           it 'subscribes to the topics matching the pattern' do
             consumer.subscribe('t.ptopic')
