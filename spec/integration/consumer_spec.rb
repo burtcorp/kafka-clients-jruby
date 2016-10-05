@@ -256,7 +256,7 @@ module Kafka
         include_context 'available_records'
 
         context 'when given a topic name and partition' do
-          it 'returns the offset of the next record offset for a topic and partition' do
+          it 'returns the offset of the next record for that topic and partition' do
             topic_partition = consumer.assignment.first
             offset = consumer.position(topic_partition.topic, topic_partition.partition)
             expect(offset).to be_a(Fixnum)
@@ -264,7 +264,7 @@ module Kafka
         end
 
         context 'when given a TopicPartition' do
-          it 'returns the offset of the next record offset for a topic and partition' do
+          it 'returns the offset of the next record for that topic and partition' do
             offset = consumer.position(consumer.assignment.first)
             expect(offset).to be_a(Fixnum)
           end

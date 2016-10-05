@@ -372,6 +372,36 @@ module Kafka
           end
         end
       end
+
+      describe '#position' do
+        include_context 'records'
+
+        before do
+          consumer.poll(0)
+          consumer.commit_sync
+        end
+
+        context 'when given a topic name and partition' do
+          it 'returns the offset of the next record for that topic and partition' do
+            offset = consumer.position('toptopic', 1)
+            expect(offset).to eq(17)
+          end
+        end
+
+        context 'when given a TopicPartition' do
+          it 'returns the offset of the next record for that topic and partition' do
+            offset = consumer.position(TopicPartition.new('toptopic', 1))
+            expect(offset).to eq(17)
+          end
+        end
+
+        context 'when given a partition not assigned to this consumer' do
+          it 'raises ArgumentError' do
+            partition = TopicPartition.new('toptopic', 99)
+            expect { consumer.position(partition) }.to raise_error(ArgumentError, /can only check the position for partitions assigned to this consumer/)
+          end
+        end
+      end
     end
   end
 end
