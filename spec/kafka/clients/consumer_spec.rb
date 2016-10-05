@@ -160,6 +160,56 @@ module Kafka
           end
         end
       end
+
+      describe '#pause' do
+        let :mock_consumer do
+          double(:mock_consumer, pause: nil)
+        end
+
+        let :topic_partitions do
+          [
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
+            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
+          ]
+        end
+
+        it 'stops fetching records for the specified partitions' do
+          consumer.pause(topic_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) })
+          expect(mock_consumer).to have_received(:pause).with(contain_exactly(*topic_partitions))
+        end
+
+        context 'with partitions that are not assigned to the consumer' do
+          let :mock_consumer do
+            Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
+          end
+
+          it 'raises an ArgumentError' do
+            partitions = [TopicPartition.new('toptopic', 1), TopicPartition.new('toptopic', 2)]
+            consumer.assign(partitions.take(1))
+            expect { consumer.pause(partitions) }.to raise_error(ArgumentError)
+          end
+        end
+      end
+
+      describe '#paused' do
+        let :topic_partitions do
+          [
+            TopicPartition.new('toptopic', 0),
+            TopicPartition.new('toptopic', 1),
+            TopicPartition.new('toptopic', 2),
+          ]
+        end
+
+        it 'returns the paused partitions' do
+          consumer.assign(topic_partitions)
+          consumer.pause(topic_partitions.drop(2))
+          expect(consumer.paused).to contain_exactly(*topic_partitions.drop(2))
+        end
+
+        it 'returns an empty enumerable when there are no paused partitions' do
+          expect(consumer.paused).to be_empty
+        end
+      end
     end
   end
 end
