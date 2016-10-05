@@ -10,29 +10,17 @@ module Kafka
       end
 
       let :kafka_consumer do
-        double(:kafka_consumer)
-      end
-
-      shared_context 'kafka_mock_consumer' do
-        let :kafka_consumer do
-          Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
-        end
+        Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
       end
 
       describe '#close' do
-        before do
-          allow(kafka_consumer).to receive(:close)
-        end
-
         it 'closes the consumer' do
           consumer.close
-          expect(kafka_consumer).to have_received(:close)
+          expect(kafka_consumer.closed).to be_truthy
         end
       end
 
       describe '#partitions_for' do
-        include_context 'kafka_mock_consumer'
-
         let :kafka_partitions do
           nodes = [
             Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
@@ -79,28 +67,42 @@ module Kafka
       end
 
       describe '#subscribe' do
-        before do
-          allow(kafka_consumer).to receive(:subscribe)
-        end
-
         context 'when given a list of topic names' do
           it 'subscribes to the specified topics' do
             consumer.subscribe(%w[toptopic cipotpot])
-            expect(kafka_consumer).to have_received(:subscribe).with(contain_exactly('toptopic', 'cipotpot'), anything)
+            expect(kafka_consumer.subscription).to contain_exactly('toptopic', 'cipotpot')
           end
         end
 
         context 'when given a single string' do
+          let :kafka_partition_infos do
+            nodes = [
+              Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
+              Java::OrgApacheKafkaCommon::Node.new(234, 'lolcathost', 2345, 'b'),
+              Java::OrgApacheKafkaCommon::Node.new(345, 'lolcathost', 3456, 'c'),
+            ]
+            {
+              'toptopic' => [
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
+              ],
+              'tiptopic' => [
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 0, nodes[0], nodes, [nodes[0], nodes[1]]),
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
+                Java::OrgApacheKafkaCommon::PartitionInfo.new('tiptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
+              ]
+            }
+          end
+
+          before do
+            kafka_consumer.update_partitions('toptopic', kafka_partition_infos['toptopic'])
+            kafka_consumer.update_partitions('tiptopic', kafka_partition_infos['tiptopic'])
+          end
+
           it 'subscribes to the topics matching the pattern' do
-            pattern = nil
-            allow(kafka_consumer).to receive(:subscribe) do |p, _|
-              pattern = p
-            end
-            consumer.subscribe('toptopics.*')
-            aggregate_failures do
-              expect(pattern).to be_a(Java::JavaUtilRegex::Pattern)
-              expect(pattern.to_s).to eq('toptopics.*')
-            end
+            consumer.subscribe('t.ptopic')
+            expect(consumer.subscription).to contain_exactly('toptopic', 'tiptopic')
           end
 
           it 'raises ArgumentError when the string is not a valid regex' do
@@ -110,19 +112,14 @@ module Kafka
       end
 
       describe '#unsubscribe' do
-        before do
-          allow(kafka_consumer).to receive(:unsubscribe)
-        end
-
         it 'unsubscribes from all topics' do
+          consumer.subscribe(%w[toptopic cipotpot])
           consumer.unsubscribe
-          expect(kafka_consumer).to have_received(:unsubscribe)
+          expect(kafka_consumer.subscription).to be_empty
         end
       end
 
       describe '#poll' do
-        include_context 'kafka_mock_consumer'
-
         let :kafka_partitions do
           [
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
@@ -188,17 +185,13 @@ module Kafka
           kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
         end
 
-        before do
-          allow(kafka_consumer).to receive(:pause)
-        end
-
         it 'stops fetching records for the specified partitions' do
+          consumer.assign(partitions)
           consumer.pause(partitions.drop(1))
-          expect(kafka_consumer).to have_received(:pause).with(contain_exactly(*kafka_partitions.drop(1)))
+          expect(kafka_consumer.paused).to contain_exactly(*kafka_partitions.drop(1))
         end
 
         context 'with partitions that are not assigned to the consumer' do
-          include_context 'kafka_mock_consumer'
 
           it 'raises an ArgumentError' do
             consumer.assign(partitions.drop(1))
@@ -208,8 +201,6 @@ module Kafka
       end
 
       describe '#paused' do
-        include_context 'kafka_mock_consumer'
-
         let :partitions do
           [
             TopicPartition.new('toptopic', 0),
@@ -242,18 +233,14 @@ module Kafka
           kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
         end
 
-        before do
-          allow(kafka_consumer).to receive(:resume)
-        end
-
         it 'starts fetching records for the specified partitions' do
-          consumer.resume(partitions.drop(1))
-          expect(kafka_consumer).to have_received(:resume).with(contain_exactly(*kafka_partitions.drop(1)))
+          consumer.assign(partitions)
+          consumer.pause(partitions.drop(1))
+          consumer.resume(partitions.drop(2))
+          expect(kafka_consumer.paused).to contain_exactly(kafka_partitions[1])
         end
 
         context 'with partitions that are not assigned to the consumer' do
-          include_context 'kafka_mock_consumer'
-
           it 'raises an ArgumentError' do
             consumer.assign(partitions.drop(1))
             consumer.pause(partitions.drop(1))
