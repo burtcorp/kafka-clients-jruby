@@ -2,6 +2,7 @@ package io.burt.kafka.clients;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -290,16 +291,28 @@ public class ConsumerWrapper extends RubyObject {
   }
 
   @SuppressWarnings("unchecked")
-  @JRubyMethod(name = "seek_to_beginning", required = 1)
-  public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject partitions) {
-    kafkaConsumer.seekToBeginning(toTopicPartitionList(ctx, partitions));
+  @JRubyMethod(name = "seek_to_beginning", optional = 1)
+  public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject[] args) {
+    Collection<TopicPartition> partitions;
+    if (args.length == 0) {
+      partitions = Collections.<TopicPartition>emptySet();
+    } else {
+      partitions = toTopicPartitionList(ctx, args[0]);
+    }
+    kafkaConsumer.seekToBeginning(partitions);
     return ctx.runtime.getNil();
   }
 
   @SuppressWarnings("unchecked")
-  @JRubyMethod(name = "seek_to_end", required = 1)
-  public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject partitions) {
-    kafkaConsumer.seekToEnd(toTopicPartitionList(ctx, partitions));
+  @JRubyMethod(name = "seek_to_end", optional = 1)
+  public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject[] args) {
+    Collection<TopicPartition> partitions;
+    if (args.length == 0) {
+      partitions = Collections.<TopicPartition>emptySet();
+    } else {
+      partitions = toTopicPartitionList(ctx, args[0]);
+    }
+    kafkaConsumer.seekToEnd(partitions);
     return ctx.runtime.getNil();
   }
 

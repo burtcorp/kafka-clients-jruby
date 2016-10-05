@@ -281,32 +281,75 @@ module Kafka
       describe '#seek_to_beginning' do
         include_context 'available_records'
 
-        it 'sets the offset to the earliest available' do
-          consumer.seek_to_beginning(consumer.assignment)
-          positions = consumer.assignment.map { |tp| consumer.position(tp) }
-          expect(positions).to all(be_zero)
-        end
-
-        it 'makes #poll return the first available records' do
+        it 'makes #poll return the first available records for each partitions' do
           consumer.seek_to_beginning(consumer.assignment)
           consumer_records = consumer.poll(1)
           expect(consumer_records.map(&:key)).to include('hello0')
+        end
+
+        context 'when given no arguments' do
+          it 'sets the offset to the earliest available for all partitions assigned to the consumer' do
+            consumer.seek_to_beginning
+            positions = consumer.assignment.map { |tp| consumer.position(tp) }
+            aggregate_failures do
+              expect(positions).to all(be_zero)
+            end
+          end
+        end
+
+        context 'when given a list of partitions' do
+          it 'sets the offset to the earliest available for each partitions' do
+            all_partitions = consumer.assignment
+            unchanged_partitions = all_partitions.take(1)
+            changed_partitions = all_partitions.drop(1)
+            positions_before = Hash[all_partitions.map { |tp| [tp, consumer.position(tp)] }]
+            consumer.seek_to_beginning(changed_partitions)
+            unchanged_positions = unchanged_partitions.map { |tp| [tp, consumer.position(tp)] }
+            changed_positions = changed_partitions.map { |tp| consumer.position(tp) }
+            aggregate_failures do
+              unchanged_positions.each do |tp, offset|
+                expect(offset).to eq(positions_before[tp])
+              end
+              expect(changed_positions).to all(be_zero)
+            end
+          end
         end
       end
 
       describe '#seek_to_end' do
         include_context 'available_records'
 
-        it 'sets the offset to the latest available' do
-          consumer.seek_to_end(consumer.assignment)
-          positions = consumer.assignment.map { |tp| consumer.position(tp) }
-          expect(positions.reduce(:+)).to eq(10)
-        end
-
         it 'makes #poll not return any previous records' do
           consumer.seek_to_end(consumer.assignment)
           consumer_records = consumer.poll(1)
           expect(consumer_records).to be_empty
+        end
+
+        context 'when given no arguments' do
+          it 'sets the offset to the latest available for all partitions assigned to the consumer' do
+            consumer.seek_to_end
+            positions = consumer.assignment.map { |tp| consumer.position(tp) }
+            expect(positions.reduce(:+)).to eq(10)
+          end
+        end
+
+        context 'when given a list of partitions' do
+          it 'sets the offset to the latest available for each partition' do
+            all_partitions = consumer.assignment
+            unchanged_partitions = all_partitions.take(1)
+            changed_partitions = all_partitions.drop(1)
+            consumer.seek_to_beginning
+            positions_before = Hash[all_partitions.map { |tp| [tp, consumer.position(tp)] }]
+            consumer.seek_to_end(changed_partitions)
+            unchanged_positions = unchanged_partitions.map { |tp| consumer.position(tp) }
+            changed_positions = changed_partitions.map { |tp| [tp, consumer.position(tp)] }
+            aggregate_failures do
+              expect(unchanged_positions).to all(be_zero)
+              changed_positions.each do |tp, offset|
+                expect(offset).to be > positions_before[tp]
+              end
+            end
+          end
         end
       end
 

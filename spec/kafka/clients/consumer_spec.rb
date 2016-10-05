@@ -63,9 +63,14 @@ module Kafka
           kafka_consumer.rebalance(kafka_partitions)
           kafka_consumer.update_beginning_offsets(Hash[kafka_partitions.map { |tp| [tp, 0] }])
           consumer.seek_to_beginning(partitions)
+          end_offsets = Hash.new(0)
           kafka_records.each do |record|
             kafka_consumer.add_record(record)
+            tp = Java::OrgApacheKafkaCommon::TopicPartition.new(record.topic, record.partition)
+            next_offset = record.offset + 1
+            end_offsets[tp] = next_offset if end_offsets[tp] < next_offset
           end
+          kafka_consumer.update_end_offsets(end_offsets)
         end
       end
 
@@ -399,6 +404,64 @@ module Kafka
           it 'raises ArgumentError' do
             partition = TopicPartition.new('toptopic', 99)
             expect { consumer.position(partition) }.to raise_error(ArgumentError, /can only check the position for partitions assigned to this consumer/)
+          end
+        end
+      end
+
+      describe '#seek_to_beginning' do
+        include_context 'records'
+
+        context 'when given no arguments', pending: 'This is not supported by MockConsumer' do
+          it 'seeks to the first available offset for all assigned partitions' do
+            consumer.poll(0)
+            consumer.commit_sync
+            consumer.seek_to_beginning
+            aggregate_failures do
+              expect(consumer.position('toptopic', 0)).to eq(0)
+              expect(consumer.position('toptopic', 1)).to eq(0)
+              expect(consumer.position('toptopic', 2)).to eq(0)
+            end
+          end
+        end
+
+        context 'when given a list of partitions' do
+          it 'seeks to the first available offset for each partition' do
+            consumer.poll(0)
+            consumer.commit_sync
+            consumer.seek_to_beginning([TopicPartition.new('toptopic', 0), TopicPartition.new('toptopic', 2)])
+            aggregate_failures do
+              expect(consumer.position('toptopic', 0)).to eq(0)
+              expect(consumer.position('toptopic', 1)).to eq(17)
+              expect(consumer.position('toptopic', 2)).to eq(0)
+            end
+          end
+        end
+      end
+
+      describe '#seek_to_end' do
+        include_context 'records'
+
+        context 'when given no arguments', pending: 'This is not supported by MockConsumer' do
+          it 'seeks to the last offset for all assigned partitions' do
+            consumer.seek_to_end
+            consumer_records = consumer.poll(0)
+            aggregate_failures do
+              expect(consumer_records).to be_empty
+              expect(consumer.position('toptopic', 0)).to eq(19)
+              expect(consumer.position('toptopic', 1)).to eq(17)
+              expect(consumer.position('toptopic', 2)).to eq(18)
+            end
+          end
+        end
+
+        context 'when given a list of partitions' do
+          it 'seeks to the last offset for each partition' do
+            consumer.seek_to_end([TopicPartition.new('toptopic', 0), TopicPartition.new('toptopic', 2)])
+            aggregate_failures do
+              expect(consumer.position('toptopic', 0)).to eq(19)
+              expect(consumer.position('toptopic', 1)).to eq(0)
+              expect(consumer.position('toptopic', 2)).to eq(18)
+            end
           end
         end
       end
