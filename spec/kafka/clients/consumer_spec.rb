@@ -10,7 +10,7 @@ module Kafka
       end
 
       let :kafka_consumer do
-        Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
+        Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::EARLIEST)
       end
 
       shared_context 'topics' do
@@ -58,19 +58,49 @@ module Kafka
           kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
         end
 
-        before do
-          consumer.subscribe(%w[toptopic])
-          kafka_consumer.rebalance(kafka_partitions)
+        let :auto_init_subscription do
+          true
+        end
+
+        let :auto_add_records do
+          true
+        end
+
+        def init_subscription(options={})
+          if (topics = options[:subscribe])
+            consumer.subscribe(topics)
+            kafka_consumer.rebalance(kafka_partitions)
+          elsif (assignment = options[:assign])
+            consumer.assign(assignment)
+          end
           kafka_consumer.update_beginning_offsets(Hash[kafka_partitions.map { |tp| [tp, 0] }])
-          consumer.seek_to_beginning(partitions)
+          if (assignment = options[:assign])
+            consumer.seek_to_beginning(assignment)
+          else
+            consumer.seek_to_beginning(partitions)
+          end
+        end
+
+        def add_records
           end_offsets = Hash.new(0)
           kafka_records.each do |record|
-            kafka_consumer.add_record(record)
-            tp = Java::OrgApacheKafkaCommon::TopicPartition.new(record.topic, record.partition)
-            next_offset = record.offset + 1
-            end_offsets[tp] = next_offset if end_offsets[tp] < next_offset
+            if !block_given? || yield(record)
+              kafka_consumer.add_record(record)
+              tp = Java::OrgApacheKafkaCommon::TopicPartition.new(record.topic, record.partition)
+              next_offset = record.offset + 1
+              end_offsets[tp] = next_offset if end_offsets[tp] < next_offset
+            end
           end
           kafka_consumer.update_end_offsets(end_offsets)
+        end
+
+        before do
+          if auto_init_subscription
+            init_subscription(subscribe: partitions.map(&:topic).uniq)
+          end
+          if auto_add_records
+            add_records
+          end
         end
       end
 
@@ -500,6 +530,63 @@ module Kafka
         context 'when seeking with a partition not assigned to the consumer' do
           it 'raises ArgumentError' do
             expect { consumer.seek('toptopic', 99, 14) }.to raise_error(ArgumentError)
+          end
+        end
+      end
+
+      describe '#assign' do
+        include_context 'records'
+
+        let :auto_init_subscription do
+          false
+        end
+
+        let :auto_add_records do
+          false
+        end
+
+        it 'tells the consumer which partitions to fetch' do
+          assignment = partitions.take(2)
+          init_subscription(assign: assignment)
+          partitions = assignment.map(&:partition)
+          add_records { |r| partitions.include?(r.partition) }
+          consumer_records = consumer.poll(0)
+          aggregate_failures do
+            expect(consumer_records.size).to eq(4 + 3)
+            expect(consumer_records).to all(satisfy { |r| r.partition == 0 || r.partition == 1 })
+          end
+        end
+
+        context 'when calling #assign after #subscribe' do
+          it 'raises ArgumentError' do
+            consumer.subscribe(%w[toptopic])
+            expect { consumer.assign(partitions.take(2)) }.to raise_error(ArgumentError)
+          end
+        end
+      end
+
+      describe '#assignment' do
+        include_context 'records'
+
+        context 'when subscribed' do
+          it 'returns the partitions assigned to the consumer' do
+            expect(consumer.assignment).to contain_exactly(*partitions)
+          end
+        end
+
+        context 'when manually assigning partitions' do
+          let :auto_init_subscription do
+            false
+          end
+
+          let :auto_add_records do
+            false
+          end
+
+          it 'returns the partitions assigned to the consumer' do
+            assignment = partitions.take(2)
+            init_subscription(assign: assignment)
+            expect(consumer.assignment).to contain_exactly(*assignment)
           end
         end
       end

@@ -354,8 +354,12 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(required = 1)
   public IRubyObject assign(ThreadContext ctx, IRubyObject partitions) {
-    kafkaConsumer.assign(toTopicPartitionList(ctx, partitions));
-    return ctx.runtime.getNil();
+    try {
+      kafkaConsumer.assign(toTopicPartitionList(ctx, partitions));
+      return ctx.runtime.getNil();
+    } catch (IllegalStateException ise) {
+      throw ctx.runtime.newArgumentError(ise.getMessage());
+    }
   }
 
   @JRubyMethod(name = "list_topics")
