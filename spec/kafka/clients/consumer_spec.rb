@@ -590,6 +590,13 @@ module Kafka
           end
         end
       end
+
+      describe '#wakeup' do
+        it 'will raise WakeupError in the thread calling #poll' do
+          consumer.wakeup
+          expect { consumer.poll(0) }.to raise_error(WakeupError)
+        end
+      end
     end
   end
 end
