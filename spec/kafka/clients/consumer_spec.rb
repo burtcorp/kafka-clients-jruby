@@ -41,6 +41,34 @@ module Kafka
         end
       end
 
+      shared_context 'records' do
+        let :kafka_records do
+          Array.new(10) do |i|
+            k = sprintf('hello%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
+            v = sprintf('world%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
+            Java::OrgApacheKafkaClientsConsumer::ConsumerRecord.new('toptopic', i % 3, i + 9, k, v)
+          end
+        end
+
+        let :kafka_partitions do
+          kafka_records.map { |r| Java::OrgApacheKafkaCommon::TopicPartition.new(r.topic, r.partition) }.uniq
+        end
+
+        let :partitions do
+          kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
+        end
+
+        before do
+          consumer.subscribe(%w[toptopic])
+          kafka_consumer.rebalance(kafka_partitions)
+          kafka_consumer.update_beginning_offsets(Hash[kafka_partitions.map { |tp| [tp, 0] }])
+          consumer.seek_to_beginning(partitions)
+          kafka_records.each do |record|
+            kafka_consumer.add_record(record)
+          end
+        end
+      end
+
       describe '#close' do
         it 'closes the consumer' do
           consumer.close
@@ -148,35 +176,9 @@ module Kafka
       end
 
       describe '#poll' do
-        let :kafka_partitions do
-          [
-            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
-            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 1),
-            Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
-          ]
-        end
-
-        let :partitions do
-          kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
-        end
-
-        before do
-          consumer.subscribe(%w[toptopic])
-          kafka_consumer.rebalance(kafka_partitions)
-          kafka_consumer.update_beginning_offsets(Hash[kafka_partitions.map { |tp| [tp, 0] }])
-          consumer.seek_to_beginning(partitions)
-        end
+        include_context 'records'
 
         context 'when there are records available' do
-          before do
-            10.times do |i|
-              k = sprintf('hello%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
-              v = sprintf('world%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
-              r = Java::OrgApacheKafkaClientsConsumer::ConsumerRecord.new('toptopic', i % 3, i + 9, k, v)
-              kafka_consumer.add_record(r)
-            end
-          end
-
           it 'returns an enumerable of records' do
             consumer_records = consumer.poll(0)
             record = consumer_records.find { |r| r.offset == 12 }
@@ -194,6 +196,10 @@ module Kafka
         end
 
         context 'when there are no records available' do
+          let :kafka_records do
+            []
+          end
+
           it 'returns an empty enumerable' do
             expect(consumer.poll(0)).to be_empty
           end
@@ -273,6 +279,96 @@ module Kafka
             consumer.assign(partitions.drop(1))
             consumer.pause(partitions.drop(1))
             expect { consumer.resume(partitions) }.to raise_error(ArgumentError)
+          end
+        end
+      end
+
+      describe '#commit_sync' do
+        include_context 'records'
+
+        context 'without arguments' do
+          it 'synchronously commits the offsets received from the last call to #poll' do
+            consumer_records = consumer.poll(0)
+            offsets = Hash[consumer_records.group_by(&:partition).map { |p, ps| [p, ps.map(&:offset).max] }]
+            consumer.commit_sync
+            aggregate_failures do
+              expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(offsets[0] + 1)
+              expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(offsets[1] + 1)
+              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(offsets[2] + 1)
+            end
+          end
+        end
+
+        context 'with arguments' do
+          it 'synchronously commits specific offsets' do
+            consumer_records = consumer.poll(0)
+            offsets = {
+              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0, ''),
+              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1, ''),
+              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4, ''),
+            }
+            consumer.commit_sync(offsets)
+            aggregate_failures do
+              expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
+              expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
+              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+            end
+          end
+        end
+      end
+
+      describe '#commit_async' do
+        include_context 'records'
+
+        context 'without arguments' do
+          it 'synchronously commits the offsets received from the last call to #poll' do
+            consumer_records = consumer.poll(0)
+            offsets = Hash[consumer_records.group_by(&:partition).map { |p, ps| [p, ps.map(&:offset).max] }]
+            consumer.commit_async
+            aggregate_failures do
+              expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(offsets[0] + 1)
+              expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(offsets[1] + 1)
+              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(offsets[2] + 1)
+            end
+          end
+
+          context 'when given a block' do
+            it 'yields when the offsets have successfully been committed' do
+              called = false
+              consumer.commit_async do
+                called = true
+              end
+              expect(called).to be_truthy
+            end
+          end
+        end
+
+        context 'with arguments' do
+          let :offsets do
+            {
+              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0, ''),
+              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1, ''),
+              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4, ''),
+            }
+          end
+
+          it 'synchronously commits specific offsets' do
+            consumer.commit_async(offsets)
+            aggregate_failures do
+              expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
+              expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
+              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+            end
+          end
+
+          context 'when given a block' do
+            it 'yields the committed offsets to the block when they have successfully been committed' do
+              committed_offsets = nil
+              consumer.commit_async(offsets) do |offsets|
+                committed_offsets = offsets
+              end
+              expect(committed_offsets).to contain_exactly(*offsets)
+            end
           end
         end
       end
