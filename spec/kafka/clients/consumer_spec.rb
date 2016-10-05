@@ -6,26 +6,34 @@ module Kafka
   module Clients
     describe Consumer do
       let :consumer do
-        Java::IoBurtKafkaClients::ConsumerWrapper.create(JRuby.runtime, mock_consumer)
+        Java::IoBurtKafkaClients::ConsumerWrapper.create(JRuby.runtime, kafka_consumer)
       end
 
-      let :mock_consumer do
-        Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
+      let :kafka_consumer do
+        double(:kafka_consumer)
+      end
+
+      shared_context 'kafka_mock_consumer' do
+        let :kafka_consumer do
+          Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
+        end
       end
 
       describe '#close' do
-        let :mock_consumer do
-          double(:mock_consumer, close: nil)
+        before do
+          allow(kafka_consumer).to receive(:close)
         end
 
         it 'closes the consumer' do
           consumer.close
-          expect(mock_consumer).to have_received(:close)
+          expect(kafka_consumer).to have_received(:close)
         end
       end
 
       describe '#partitions_for' do
-        let :partitions do
+        include_context 'kafka_mock_consumer'
+
+        let :kafka_partitions do
           nodes = [
             Java::OrgApacheKafkaCommon::Node.new(123, 'lolcathost', 1234, 'a'),
             Java::OrgApacheKafkaCommon::Node.new(234, 'lolcathost', 2345, 'b'),
@@ -39,7 +47,7 @@ module Kafka
         end
 
         before do
-          mock_consumer.update_partitions('toptopic', partitions)
+          kafka_consumer.update_partitions('toptopic', kafka_partitions)
         end
 
         it 'returns partitions for a topic' do
@@ -60,7 +68,7 @@ module Kafka
         end
 
         context 'when there are no partitions' do
-          let :partitions do
+          let :kafka_partitions do
             []
           end
 
@@ -71,21 +79,21 @@ module Kafka
       end
 
       describe '#subscribe' do
-        let :mock_consumer do
-          double(:mock_consumer, subscribe: nil)
+        before do
+          allow(kafka_consumer).to receive(:subscribe)
         end
 
         context 'when given a list of topic names' do
           it 'subscribes to the specified topics' do
             consumer.subscribe(%w[toptopic cipotpot])
-            expect(mock_consumer).to have_received(:subscribe).with(contain_exactly('toptopic', 'cipotpot'), anything)
+            expect(kafka_consumer).to have_received(:subscribe).with(contain_exactly('toptopic', 'cipotpot'), anything)
           end
         end
 
         context 'when given a single string' do
           it 'subscribes to the topics matching the pattern' do
             pattern = nil
-            allow(mock_consumer).to receive(:subscribe) do |p, _|
+            allow(kafka_consumer).to receive(:subscribe) do |p, _|
               pattern = p
             end
             consumer.subscribe('toptopics.*')
@@ -102,30 +110,36 @@ module Kafka
       end
 
       describe '#unsubscribe' do
-        let :mock_consumer do
-          double(:mock_consumer, unsubscribe: nil)
+        before do
+          allow(kafka_consumer).to receive(:unsubscribe)
         end
 
         it 'unsubscribes from all topics' do
           consumer.unsubscribe
-          expect(mock_consumer).to have_received(:unsubscribe)
+          expect(kafka_consumer).to have_received(:unsubscribe)
         end
       end
 
       describe '#poll' do
-        before do
-          consumer.subscribe(%w[toptopic])
-          mock_consumer.rebalance(partitions)
-          mock_consumer.update_beginning_offsets(Hash[partitions.map { |p| [p, 0] }])
-          consumer.seek_to_beginning(partitions.map { |p| TopicPartition.new(p.topic, p.partition) })
-        end
+        include_context 'kafka_mock_consumer'
 
-        let :partitions do
+        let :kafka_partitions do
           [
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 1),
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
           ]
+        end
+
+        let :partitions do
+          kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
+        end
+
+        before do
+          consumer.subscribe(%w[toptopic])
+          kafka_consumer.rebalance(kafka_partitions)
+          kafka_consumer.update_beginning_offsets(Hash[kafka_partitions.map { |tp| [tp, 0] }])
+          consumer.seek_to_beginning(partitions)
         end
 
         context 'when there are records available' do
@@ -134,7 +148,7 @@ module Kafka
               k = sprintf('hello%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
               v = sprintf('world%d', i).to_java(Java::OrgJrubyRuntimeBuiltin::IRubyObject)
               r = Java::OrgApacheKafkaClientsConsumer::ConsumerRecord.new('toptopic', i % 3, i + 9, k, v)
-              mock_consumer.add_record(r)
+              kafka_consumer.add_record(r)
             end
           end
 
@@ -162,37 +176,42 @@ module Kafka
       end
 
       describe '#pause' do
-        let :mock_consumer do
-          double(:mock_consumer, pause: nil)
-        end
-
-        let :topic_partitions do
+        let :kafka_partitions do
           [
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 0),
             Java::OrgApacheKafkaCommon::TopicPartition.new('toptopic', 2),
           ]
         end
 
+        let :partitions do
+          kafka_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) }
+        end
+
+        before do
+          allow(kafka_consumer).to receive(:pause)
+        end
+
         it 'stops fetching records for the specified partitions' do
-          consumer.pause(topic_partitions.map { |tp| TopicPartition.new(tp.topic, tp.partition) })
-          expect(mock_consumer).to have_received(:pause).with(contain_exactly(*topic_partitions))
+          consumer.pause(partitions)
+          expect(kafka_consumer).to have_received(:pause).with(contain_exactly(*kafka_partitions))
         end
 
         context 'with partitions that are not assigned to the consumer' do
-          let :mock_consumer do
+          let :kafka_consumer do
             Java::OrgApacheKafkaClientsConsumer::MockConsumer.new(Java::OrgApacheKafkaClientsConsumer::OffsetResetStrategy::NONE)
           end
 
           it 'raises an ArgumentError' do
-            partitions = [TopicPartition.new('toptopic', 1), TopicPartition.new('toptopic', 2)]
-            consumer.assign(partitions.take(1))
+            consumer.assign(partitions.drop(1))
             expect { consumer.pause(partitions) }.to raise_error(ArgumentError)
           end
         end
       end
 
       describe '#paused' do
-        let :topic_partitions do
+        include_context 'kafka_mock_consumer'
+
+        let :partitions do
           [
             TopicPartition.new('toptopic', 0),
             TopicPartition.new('toptopic', 1),
@@ -201,9 +220,9 @@ module Kafka
         end
 
         it 'returns the paused partitions' do
-          consumer.assign(topic_partitions)
-          consumer.pause(topic_partitions.drop(2))
-          expect(consumer.paused).to contain_exactly(*topic_partitions.drop(2))
+          consumer.assign(partitions)
+          consumer.pause(partitions.drop(2))
+          expect(consumer.paused).to contain_exactly(*partitions.drop(2))
         end
 
         it 'returns an empty enumerable when there are no paused partitions' do
