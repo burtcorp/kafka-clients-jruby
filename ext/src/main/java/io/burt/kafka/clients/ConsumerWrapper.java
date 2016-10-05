@@ -293,27 +293,35 @@ public class ConsumerWrapper extends RubyObject {
   @SuppressWarnings("unchecked")
   @JRubyMethod(name = "seek_to_beginning", optional = 1)
   public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject[] args) {
-    Collection<TopicPartition> partitions;
-    if (args.length == 0) {
-      partitions = Collections.<TopicPartition>emptySet();
-    } else {
-      partitions = toTopicPartitionList(ctx, args[0]);
+    try {
+      Collection<TopicPartition> partitions;
+      if (args.length == 0) {
+        partitions = Collections.<TopicPartition>emptySet();
+      } else {
+        partitions = toTopicPartitionList(ctx, args[0]);
+      }
+      kafkaConsumer.seekToBeginning(partitions);
+      return ctx.runtime.getNil();
+    } catch (IllegalStateException ise) {
+      throw ctx.runtime.newArgumentError(ise.getMessage());
     }
-    kafkaConsumer.seekToBeginning(partitions);
-    return ctx.runtime.getNil();
   }
 
   @SuppressWarnings("unchecked")
   @JRubyMethod(name = "seek_to_end", optional = 1)
   public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject[] args) {
-    Collection<TopicPartition> partitions;
-    if (args.length == 0) {
-      partitions = Collections.<TopicPartition>emptySet();
-    } else {
-      partitions = toTopicPartitionList(ctx, args[0]);
+    try {
+      Collection<TopicPartition> partitions;
+      if (args.length == 0) {
+        partitions = Collections.<TopicPartition>emptySet();
+      } else {
+        partitions = toTopicPartitionList(ctx, args[0]);
+      }
+      kafkaConsumer.seekToEnd(partitions);
+      return ctx.runtime.getNil();
+    } catch (IllegalStateException ise) {
+      throw ctx.runtime.newArgumentError(ise.getMessage());
     }
-    kafkaConsumer.seekToEnd(partitions);
-    return ctx.runtime.getNil();
   }
 
   @JRubyMethod(required = 2, optional = 1)

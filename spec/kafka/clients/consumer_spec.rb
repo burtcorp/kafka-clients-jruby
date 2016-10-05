@@ -436,6 +436,12 @@ module Kafka
             end
           end
         end
+
+        context 'when seeking with a partition not assigned to the consumer' do
+          it 'raises ArgumentError' do
+            expect { consumer.seek_to_beginning([TopicPartition.new('toptopic', 99)]) }.to raise_error(ArgumentError)
+          end
+        end
       end
 
       describe '#seek_to_end' do
@@ -462,6 +468,12 @@ module Kafka
               expect(consumer.position('toptopic', 1)).to eq(0)
               expect(consumer.position('toptopic', 2)).to eq(18)
             end
+          end
+        end
+
+        context 'when seeking with a partition not assigned to the consumer' do
+          it 'raises ArgumentError' do
+            expect { consumer.seek_to_end([TopicPartition.new('toptopic', 99)]) }.to raise_error(ArgumentError)
           end
         end
       end
