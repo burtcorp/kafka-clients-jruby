@@ -79,6 +79,44 @@ module Kafka
         end
       end
 
+      describe '#list_topics' do
+        include_context 'topics'
+
+        context 'returns a hash that' do
+          it 'has the available topics\' names as keys' do
+            expect(consumer.list_topics.keys).to contain_exactly('toptopic', 'tiptopic')
+          end
+
+          it 'has info about the topics\' partitions as values' do
+            partitions = consumer.list_topics['tiptopic']
+            partition = partitions.find { |pi| pi.partition == 1 }
+            aggregate_failures do
+              expect(partitions.size).to eq(3)
+              expect(partition.topic).to eq('tiptopic')
+              expect(partition.partition).to eq(1)
+              expect(partition.leader.host).to eq('lolcathost')
+              expect(partition.leader.port).to eq(2345)
+              expect(partition.leader.id).to eq(234)
+              expect(partition.leader).to have_rack
+              expect(partition.leader.rack).to eq('b')
+              expect(partition.leader).to_not be_empty
+              expect(partition.replicas.map(&:id)).to contain_exactly(123, 234, 345)
+              expect(partition.in_sync_replicas.map(&:id)).to contain_exactly(234, 345)
+            end
+          end
+        end
+
+        context 'when there are no topics' do
+          let :kafka_partition_infos do
+            {}
+          end
+
+          it 'returns an empty hash' do
+            expect(consumer.list_topics).to be_empty
+          end
+        end
+      end
+
       describe '#subscribe' do
         context 'when given a list of topic names' do
           it 'subscribes to the specified topics' do
