@@ -477,6 +477,32 @@ module Kafka
           end
         end
       end
+
+      describe '#seek' do
+        context 'when given a TopicPartition' do
+          it 'seeks to the specified offset' do
+            partition = TopicPartition.new('toptopic', 1)
+            consumer.assign([partition])
+            consumer.seek(partition, 14)
+            expect(consumer.position(partition)).to eq(14)
+          end
+        end
+
+        context 'when given a topic and a partition' do
+          it 'seeks to the specified offset' do
+            partition = TopicPartition.new('toptopic', 1)
+            consumer.assign([partition])
+            consumer.seek(partition.topic, partition.partition, 14)
+            expect(consumer.position(partition)).to eq(14)
+          end
+        end
+
+        context 'when seeking with a partition not assigned to the consumer' do
+          it 'raises ArgumentError' do
+            expect { consumer.seek('toptopic', 99, 14) }.to raise_error(ArgumentError)
+          end
+        end
+      end
     end
   end
 end

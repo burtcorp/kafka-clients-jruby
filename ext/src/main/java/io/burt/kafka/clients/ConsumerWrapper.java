@@ -326,16 +326,20 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(required = 2, optional = 1)
   public IRubyObject seek(ThreadContext ctx, IRubyObject[] args) {
-    TopicPartition tp;
-    if (args.length == 3) {
-      tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
-    } else if (args[0] instanceof TopicPartitionWrapper) {
-      tp = ((TopicPartitionWrapper) args[0]).topicPartition();
-    } else {
-      throw ctx.runtime.newTypeError(args[0], ctx.runtime.getClassFromPath("Kafka::Clients::TopicPartition"));
+    try {
+      TopicPartition tp;
+      if (args.length == 3) {
+        tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
+      } else if (args[0] instanceof TopicPartitionWrapper) {
+        tp = ((TopicPartitionWrapper) args[0]).topicPartition();
+      } else {
+        throw ctx.runtime.newTypeError(args[0], ctx.runtime.getClassFromPath("Kafka::Clients::TopicPartition"));
+      }
+      kafkaConsumer.seek(tp, args[args.length - 1].convertToInteger().getLongValue());
+      return ctx.runtime.getNil();
+    } catch (IllegalStateException ise) {
+      throw ctx.runtime.newArgumentError(ise.getMessage());
     }
-    kafkaConsumer.seek(tp, args[args.length - 1].convertToInteger().getLongValue());
-    return ctx.runtime.getNil();
   }
 
   @JRubyMethod
