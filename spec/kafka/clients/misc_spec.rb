@@ -22,6 +22,64 @@ module Kafka
     it 'does not generate an error class when there is no corresponding error in Kafka' do
       expect { described_class::FuzzBazzError }.to raise_error(NameError)
     end
+
+    context 'when converting configuration' do
+      let :kafka_config do
+        Hash[Java::IoBurtKafkaClients::KafkaClientsLibrary.to_kafka_configuration(config)]
+      end
+
+      let :config do
+        {}
+      end
+
+      context 'and :bootstrap_servers is used' do
+        let :config do
+          {:bootstrap_servers => 'lolcathost:4444'}
+        end
+
+        it 'changes the property to "bootstrap.servers"' do
+          expect(kafka_config).to include('bootstrap.servers' => 'lolcathost:4444')
+        end
+
+        context 'and the value is an array' do
+          let :config do
+            {:bootstrap_servers => %w[lolcathost:4444 example.com:5555]}
+          end
+
+          it 'joins the array with comma' do
+            expect(kafka_config).to include('bootstrap.servers' => 'lolcathost:4444,example.com:5555')
+          end
+        end
+      end
+
+      context 'and :group_id is used' do
+        let :config do
+          {:group_id => 'kafkatron'}
+        end
+
+        it 'changes the property to "group.id"' do
+          expect(kafka_config).to include('group.id' => 'kafkatron')
+        end
+      end
+
+      context 'and :partitioner is used' do
+        let :partitioner do
+          double(:partitioner)
+        end
+
+        let :config do
+          {:partitioner => partitioner}
+        end
+
+        it 'sets the partitioner class to a proxy class' do
+          expect(kafka_config).to include('partitioner.class' => 'io.burt.kafka.clients.PartitionerProxy')
+        end
+
+        it 'sets a property so that the proxy partitioner can find the partitioner object' do
+          expect(kafka_config).to include('io.burt.kafka.clients.partitioner' => partitioner)
+        end
+      end
+    end
   end
 
   module Clients
