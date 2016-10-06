@@ -1,18 +1,19 @@
 package io.burt.kafka.clients;
 
-import java.util.concurrent.TimeoutException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.errors.ApiException;
-import org.apache.kafka.common.errors.InvalidGroupIdException;
-import org.apache.kafka.common.errors.RecordTooLargeException;
-import org.apache.kafka.common.errors.WakeupException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyClass;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 public class KafkaClientsLibrary implements Library {
@@ -51,5 +52,34 @@ public class KafkaClientsLibrary implements Library {
 
   static RaiseException newRaiseException(Ruby runtime, Throwable t) {
     return runtime.newRaiseException(mapErrorClass(runtime, t), t.getMessage());
+  }
+
+  @SuppressWarnings("unchecked")
+  static Map<String, Object> toKafkaConfiguration(RubyHash config) {
+    Map<String, Object> kafkaConfig = new HashMap<>();
+    for (IRubyObject key : (List<IRubyObject>) config.keys().getList()) {
+      IRubyObject value = config.fastARef(key);
+      if (key instanceof RubySymbol && !value.isNil()) {
+        String keyStr = key.asJavaString();
+        if (keyStr.equals("bootstrap_servers")) {
+          String valueString;
+          if (value instanceof RubyArray) {
+            Ruby runtime = config.getRuntime();
+            valueString = value.convertToArray().join(runtime.getCurrentContext(), runtime.newString(",")).asJavaString();
+          } else {
+            valueString = value.asString().asJavaString();
+          }
+          kafkaConfig.put("bootstrap.servers", valueString);
+        } else if (keyStr.equals("group_id")) {
+          kafkaConfig.put("group.id", value.asString().asJavaString());
+        } else if (keyStr.equals("partitioner")) {
+          kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
+        }
+      } else if (!value.isNil()) {
+        kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
+      }
+    }
+    return kafkaConfig;
   }
 }

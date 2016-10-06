@@ -69,38 +69,14 @@ public class ConsumerWrapper extends RubyObject {
     return new ConsumerWrapper(runtime, metaClass, consumer);
   }
 
-  @SuppressWarnings("unchecked")
-  private Map<String, Object> convertKafkaOptions(ThreadContext ctx, IRubyObject config) {
-    Map<String, Object> kafkaConfig = new HashMap<>();
-    RubyHash configHash = config.convertToHash();
-    for (IRubyObject key : (List<IRubyObject>) configHash.keys().getList()) {
-      IRubyObject value = configHash.fastARef(key);
-      if (key instanceof RubySymbol && !value.isNil()) {
-        if (key.asJavaString().equals("bootstrap_servers")) {
-          String valueString;
-          if (value instanceof RubyArray) {
-            valueString = value.convertToArray().join(ctx, ctx.runtime.newString(",")).asJavaString();
-          } else {
-            valueString = value.asString().asJavaString();
-          }
-          kafkaConfig.put("bootstrap.servers", valueString);
-        } else if (key.asJavaString().equals("group_id")) {
-          kafkaConfig.put("group.id", value.asString().asJavaString());
-        }
-      } else if (!value.isNil()) {
-        kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
-      }
-    }
-    return kafkaConfig;
-  }
-
   @JRubyMethod(optional = 1)
   public IRubyObject initialize(ThreadContext ctx, IRubyObject[] args) {
     if (kafkaConsumer == null) {
       if (args.length > 0) {
         try {
           Deserializer<IRubyObject> deserializer = new RubyStringDeserializer(ctx.runtime);
-          kafkaConsumer = new KafkaConsumer<>(convertKafkaOptions(ctx, args[0]), deserializer, deserializer);
+          Map<String, Object> config = KafkaClientsLibrary.toKafkaConfiguration(args[0].convertToHash());
+          kafkaConsumer = new KafkaConsumer<>(config, deserializer, deserializer);
         } catch (KafkaException ke) {
           throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
         }

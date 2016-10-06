@@ -60,39 +60,14 @@ public class ProducerWrapper extends RubyObject {
     return new ProducerWrapper(runtime, metaClass, producer);
   }
 
-  @SuppressWarnings("unchecked")
-  private Map<String, Object> convertKafkaOptions(ThreadContext ctx, IRubyObject config) {
-    Map<String, Object> kafkaConfig = new HashMap<>();
-    RubyHash configHash = config.convertToHash();
-    for (IRubyObject key : (List<IRubyObject>) configHash.keys().getList()) {
-      IRubyObject value = configHash.fastARef(key);
-      if (key instanceof RubySymbol && !value.isNil()) {
-        if (key.asJavaString().equals("bootstrap_servers")) {
-          String valueString;
-          if (value instanceof RubyArray) {
-            valueString = value.convertToArray().join(ctx, ctx.runtime.newString(",")).asJavaString();
-          } else {
-            valueString = value.asString().asJavaString();
-          }
-          kafkaConfig.put("bootstrap.servers", valueString);
-        } else if (key.asJavaString().equals("partitioner")) {
-          kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
-        }
-      } else if (!value.isNil()) {
-        kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
-      }
-    }
-    return kafkaConfig;
-  }
-
   @JRubyMethod(optional = 1)
   public IRubyObject initialize(ThreadContext ctx, IRubyObject[] args) {
     if (kafkaProducer == null) {
       if (args.length > 0) {
         try {
           Serializer<IRubyObject> serializer = new RubyStringSerializer();
-          kafkaProducer = new KafkaProducer<>(convertKafkaOptions(ctx, args[0]), serializer, serializer);
+          Map<String, Object> config = KafkaClientsLibrary.toKafkaConfiguration(args[0].convertToHash());
+          kafkaProducer = new KafkaProducer<>(config, serializer, serializer);
         } catch (KafkaException ke) {
           throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
         }
