@@ -36,6 +36,12 @@ module Kafka
             config[:bootstrap_servers] = [config.delete('bootstrap.servers')] * 3
             consumer
           end
+
+          it 'understands that :group_id is an alias for group.id' do
+            config[:group_id] = config.delete('group.id')
+            consumer.subscribe(topic_names)
+            expect { consumer.poll(0) }.to_not raise_error
+          end
         end
       end
 

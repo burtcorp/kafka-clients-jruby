@@ -84,6 +84,8 @@ public class ConsumerWrapper extends RubyObject {
             valueString = value.asString().asJavaString();
           }
           kafkaConfig.put("bootstrap.servers", valueString);
+        } else if (key.asJavaString().equals("group_id")) {
+          kafkaConfig.put("group.id", value.asString().asJavaString());
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
