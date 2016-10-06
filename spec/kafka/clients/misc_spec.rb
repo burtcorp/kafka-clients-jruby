@@ -79,6 +79,116 @@ module Kafka
           expect(kafka_config).to include('io.burt.kafka.clients.partitioner' => partitioner)
         end
       end
+
+      context 'and :acks is used' do
+        let :config do
+          {:acks => 4}
+        end
+
+        it 'changes the property to "acks" and the value to a string' do
+          expect(kafka_config).to include('acks' => '4')
+        end
+      end
+
+      context 'and :compression_type is used' do
+        let :config do
+          {:compression_type => 'lz4'}
+        end
+
+        it 'changes the property to "compression.type"' do
+          expect(kafka_config).to include('compression.type' => 'lz4')
+        end
+      end
+
+      context 'and :batch_size is used' do
+        let :config do
+          {:batch_size => 123}
+        end
+
+        it 'changes the property to "batch.size"' do
+          expect(kafka_config).to include('batch.size' => 123)
+        end
+      end
+
+      context 'and :client_id is used' do
+        let :config do
+          {:client_id => 'me'}
+        end
+
+        it 'changes the property to "client.id"' do
+          expect(kafka_config).to include('client.id' => 'me')
+        end
+
+        context 'when the value is not a string' do
+          let :config do
+            {:client_id => 123}
+          end
+
+          it 'converts it to a string' do
+            expect(kafka_config).to include('client.id' => '123')
+          end
+        end
+      end
+
+      context 'and :linger is used' do
+        let :config do
+          {:linger => 12.3}
+        end
+
+        it 'changes the property to "linger.ms" and the value to milliseconds' do
+          expect(kafka_config).to include('linger.ms' => 12_300)
+        end
+      end
+
+      context 'and :max_block is used' do
+        let :config do
+          {:max_block => 12.3}
+        end
+
+        it 'changes the property to "max.block.ms" and the value to milliseconds' do
+          expect(kafka_config).to include('max.block.ms' => 12_300)
+        end
+      end
+
+      context 'and :max_request_size is used' do
+        let :config do
+          {:max_request_size => 123}
+        end
+
+        it 'changes the property to "max_request_size"' do
+          expect(kafka_config).to include('max.request.size' => 123)
+        end
+      end
+
+      context 'and :timeout is used' do
+        let :config do
+          {:timeout => 12.3}
+        end
+
+        it 'changes the property to "timeout.ms" and the value to milliseconds' do
+          expect(kafka_config).to include('timeout.ms' => 12_300)
+        end
+      end
+
+      context 'and :auto_commit is used' do
+        let :config do
+          {:auto_commit => false}
+        end
+
+        it 'changes the property to "auto.commit.enable"' do
+          expect(kafka_config).to include('auto.commit.enable' => false)
+        end
+      end
+
+      context 'and :auto_commit_interval is used' do
+        let :config do
+          {:auto_commit_interval => 12.3}
+        end
+
+        it 'changes the property to "auto.commit.interval.ms" and the value to milliseconds' do
+          expect(kafka_config).to include('auto.commit.interval.ms' => 12_300)
+        end
+      end
     end
   end
 

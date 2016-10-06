@@ -75,6 +75,26 @@ public class KafkaClientsLibrary implements Library {
         } else if (keyStr.equals("partitioner")) {
           kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
           kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
+        } else if (keyStr.equals("acks")) {
+          kafkaConfig.put("acks", value.asString().asJavaString());
+        } else if (keyStr.equals("compression_type")) {
+          kafkaConfig.put("compression.type", value.convertToString().asJavaString());
+        } else if (keyStr.equals("batch_size")) {
+          kafkaConfig.put("batch.size", (int) value.convertToInteger().getLongValue());
+        } else if (keyStr.equals("client_id")) {
+          kafkaConfig.put("client.id", value.asString().asJavaString());
+        } else if (keyStr.equals("linger")) {
+          kafkaConfig.put("linger.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+        } else if (keyStr.equals("max_block")) {
+          kafkaConfig.put("max.block.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+        } else if (keyStr.equals("max_request_size")) {
+          kafkaConfig.put("max.request.size", (int) value.convertToInteger().getLongValue());
+        } else if (keyStr.equals("timeout")) {
+          kafkaConfig.put("timeout.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+        } else if (keyStr.equals("auto_commit")) {
+          kafkaConfig.put("auto.commit.enable", value.isTrue());
+        } else if (keyStr.equals("auto_commit_interval")) {
+          kafkaConfig.put("auto.commit.interval.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
