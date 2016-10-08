@@ -29,7 +29,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -268,7 +267,6 @@ public class ConsumerWrapper extends RubyObject {
     return tpl;
   }
 
-  @SuppressWarnings("unchecked")
   @JRubyMethod(name = "seek_to_beginning", optional = 1)
   public IRubyObject seekToBeginning(ThreadContext ctx, IRubyObject[] args) {
     try {
@@ -285,7 +283,6 @@ public class ConsumerWrapper extends RubyObject {
     }
   }
 
-  @SuppressWarnings("unchecked")
   @JRubyMethod(name = "seek_to_end", optional = 1)
   public IRubyObject seekToEnd(ThreadContext ctx, IRubyObject[] args) {
     try {
