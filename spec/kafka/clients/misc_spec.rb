@@ -90,6 +90,16 @@ module Kafka
         end
       end
 
+      context 'and :retries is used' do
+        let :config do
+          {:retries => 3}
+        end
+
+        it 'changes the property to "retries"' do
+          expect(kafka_config).to include('retries' => 3)
+        end
+      end
+
       context 'and :compression_type is used' do
         let :config do
           {:compression_type => 'lz4'}

@@ -79,6 +79,8 @@ public class KafkaClientsLibrary implements Library {
           kafkaConfig.put("acks", value.asString().asJavaString());
         } else if (keyStr.equals("compression_type")) {
           kafkaConfig.put("compression.type", value.convertToString().asJavaString());
+        } else if (keyStr.equals("retries")) {
+          kafkaConfig.put("retries", (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("batch_size")) {
           kafkaConfig.put("batch.size", (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("client_id")) {
