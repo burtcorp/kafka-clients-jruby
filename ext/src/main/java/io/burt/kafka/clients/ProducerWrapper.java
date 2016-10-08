@@ -19,6 +19,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -95,7 +96,8 @@ public class ProducerWrapper extends RubyObject {
   }
 
   @JRubyMethod(required = 1, optional = 4)
-  public IRubyObject send(final ThreadContext ctx, IRubyObject[] args, final Block block) {
+  public IRubyObject send(final ThreadContext ctx, IRubyObject[] args, Block block) {
+    final RubyProc callback = block.isGiven() ? block.getProcObject() : null;
     ProducerRecord<IRubyObject, IRubyObject> record;
     if (args.length == 1) {
       if (args[0] instanceof ProducerRecordWrapper) {
@@ -108,7 +110,7 @@ public class ProducerWrapper extends RubyObject {
     }
     Future<RecordMetadata> resultFuture;
     try {
-      if (block.isGiven()) {
+      if (callback != null) {
         resultFuture = kafkaProducer.send(record, new Callback() {
           @Override
           public void onCompletion(RecordMetadata md, Exception exception) {
@@ -125,7 +127,7 @@ public class ProducerWrapper extends RubyObject {
             } else {
               metadata = RecordMetadataWrapper.create(ctx.runtime, md);
             }
-            block.call(ctx, metadata, error);
+            callback.call(ctx, new IRubyObject[] {metadata, error});
           }
         });
       } else {
