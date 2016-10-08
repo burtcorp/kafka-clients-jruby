@@ -91,12 +91,16 @@ public class KafkaClientsLibrary implements Library {
           kafkaConfig.put("max.block.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("max_request_size")) {
           kafkaConfig.put("max.request.size", (int) value.convertToInteger().getLongValue());
+        } else if (keyStr.equals("max_poll_records")) {
+          kafkaConfig.put("max.poll.records", (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("timeout")) {
           kafkaConfig.put("timeout.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_commit")) {
           kafkaConfig.put("auto.commit.enable", value.isTrue());
         } else if (keyStr.equals("auto_commit_interval")) {
           kafkaConfig.put("auto.commit.interval.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+        } else if (keyStr.equals("auto_offset_reset")) {
+          kafkaConfig.put("auto.offset.reset", value.convertToString().asJavaString());
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());

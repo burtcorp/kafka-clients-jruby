@@ -170,6 +170,16 @@ module Kafka
         end
       end
 
+      context 'and :max_poll_records is used' do
+        let :config do
+          {:max_poll_records => 123}
+        end
+
+        it 'changes the property to "max.poll.records"' do
+          expect(kafka_config).to include('max.poll.records' => 123)
+        end
+      end
+
       context 'and :timeout is used' do
         let :config do
           {:timeout => 12.3}
@@ -197,6 +207,16 @@ module Kafka
 
         it 'changes the property to "auto.commit.interval.ms" and the value to milliseconds' do
           expect(kafka_config).to include('auto.commit.interval.ms' => 12_300)
+        end
+      end
+
+      context 'and :auto_offset_reset is used' do
+        let :config do
+          {:auto_offset_reset => 'smallest'}
+        end
+
+        it 'changes the property to "auto.offset.reset"' do
+          expect(kafka_config).to include('auto.offset.reset' => 'smallest')
         end
       end
     end
