@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.author = 'Theo Hultberg'
   s.email = 'theo@burtcorp.com'
   s.summary = 'Kafka clients for JRuby'
+  s.homepage = 'http://github.com/burtcorp/kafka-clients-jruby'
   s.description = 'Native JRuby wrappers of the Kafka producer and consumer clients'
   s.platform = 'java'
 
