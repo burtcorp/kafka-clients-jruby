@@ -28,7 +28,7 @@ public class OffsetAndMetadataWrapper extends RubyObject {
     if (offsetAndMetadata != null) {
       this.offsetAndMetadata = offsetAndMetadata;
       this.offset = runtime.newFixnum(offsetAndMetadata.offset());
-      this.metadata = runtime.newString(offsetAndMetadata.metadata());
+      this.metadata = offsetAndMetadata.metadata() == null ? runtime.getNil() : runtime.newString(offsetAndMetadata.metadata());
     }
   }
 
@@ -52,11 +52,14 @@ public class OffsetAndMetadataWrapper extends RubyObject {
     return offsetAndMetadata;
   }
 
-  @JRubyMethod(required = 2)
-  public IRubyObject initialize(IRubyObject offset, IRubyObject metadata) {
-    this.offset = offset;
-    this.metadata = metadata;
-    this.offsetAndMetadata = new OffsetAndMetadata((int) offset.convertToInteger().getLongValue(), metadata.convertToString().asJavaString());
+  @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject initialize(ThreadContext ctx, IRubyObject[] args) {
+    this.offset = args[0];
+    this.metadata = args.length > 1 ? args[1] : ctx.runtime.getNil();
+    this.offsetAndMetadata = new OffsetAndMetadata(
+      (int) offset.convertToInteger().getLongValue(),
+      this.metadata.isNil() ? null : this.metadata.convertToString().asJavaString()
+    );
     return this;
   }
 
@@ -97,10 +100,10 @@ public class OffsetAndMetadataWrapper extends RubyObject {
   @JRubyMethod(name = "to_s")
   public IRubyObject toS(ThreadContext ctx) {
     return ctx.runtime.newString(String.format(
-      "#<%s @offset=%d, @metadata=\"%s\">",
+      "#<%s @offset=%d, @metadata=%s>",
       getMetaClass().getName(),
       offsetAndMetadata.offset(),
-      offsetAndMetadata.metadata()
+      metadata.inspect()
     ));
   }
 }

@@ -241,6 +241,16 @@ module Kafka
           it 'includes the metadata' do
             expect(offset_and_metadata.to_s).to include('@metadata="hello world"')
           end
+
+          context 'when no metadata is specified' do
+            let :offset_and_metadata do
+              OffsetAndMetadata.new(234253434)
+            end
+
+            it 'includes the metadata (as nil)' do
+              expect(offset_and_metadata.to_s).to include('@metadata=nil')
+            end
+          end
         end
       end
     end
