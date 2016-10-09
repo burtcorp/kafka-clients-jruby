@@ -97,7 +97,7 @@ public class ProducerWrapper extends RubyObject {
 
   @JRubyMethod(required = 1, optional = 4)
   public IRubyObject send(final ThreadContext ctx, IRubyObject[] args, Block block) {
-    final RubyProc callback = block.isGiven() ? block.getProcObject() : null;
+    final RubyProc callback = block.isGiven() ? ctx.runtime.newProc(Block.Type.PROC, block) : null;
     ProducerRecord<IRubyObject, IRubyObject> record;
     if (args.length == 1) {
       if (args[0] instanceof ProducerRecordWrapper) {

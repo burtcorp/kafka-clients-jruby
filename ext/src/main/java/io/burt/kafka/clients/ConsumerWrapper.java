@@ -231,7 +231,7 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(name = "commit_async", optional = 1)
   public IRubyObject commitAsync(final ThreadContext ctx, IRubyObject[] args, final Block block) {
-    final RubyProc callback = block.isGiven() ? block.getProcObject() : null;
+    final RubyProc callback = block.isGiven() ? ctx.runtime.newProc(Block.Type.PROC, block) : null;
     OffsetCommitCallback commitCallback = new OffsetCommitCallback() {
       @Override
       public void onComplete(Map<TopicPartition, OffsetAndMetadata> syncOffsets, Exception exception) {
