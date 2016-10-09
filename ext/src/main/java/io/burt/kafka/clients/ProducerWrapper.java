@@ -96,8 +96,9 @@ public class ProducerWrapper extends RubyObject {
   }
 
   @JRubyMethod(required = 1, optional = 4)
-  public IRubyObject send(final ThreadContext ctx, IRubyObject[] args, Block block) {
+  public IRubyObject send(ThreadContext ctx, IRubyObject[] args, Block block) {
     final RubyProc callback = block.isGiven() ? ctx.runtime.newProc(Block.Type.PROC, block) : null;
+    final Ruby runtime = ctx.runtime;
     ProducerRecord<IRubyObject, IRubyObject> record;
     if (args.length == 1) {
       if (args[0] instanceof ProducerRecordWrapper) {
@@ -116,18 +117,18 @@ public class ProducerWrapper extends RubyObject {
           public void onCompletion(RecordMetadata md, Exception exception) {
             IRubyObject error;
             if (exception == null) {
-              error = ctx.runtime.getNil();
+              error = runtime.getNil();
             } else {
-              RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(ctx.runtime, exception);
-              error = errorClass.newInstance(ctx, ctx.runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
+              RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(runtime, exception);
+              error = errorClass.newInstance(runtime.getCurrentContext(), runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
             }
             IRubyObject metadata;
             if (md == null) {
-              metadata = ctx.runtime.getNil();
+              metadata = runtime.getNil();
             } else {
-              metadata = RecordMetadataWrapper.create(ctx.runtime, md);
+              metadata = RecordMetadataWrapper.create(runtime, md);
             }
-            callback.call(ctx, new IRubyObject[] {metadata, error});
+            callback.call(runtime.getCurrentContext(), new IRubyObject[] {metadata, error});
           }
         });
       } else {
@@ -139,7 +140,7 @@ public class ProducerWrapper extends RubyObject {
     return FutureWrapper.create(ctx.runtime, resultFuture, new FutureWrapper.Rubifier<RecordMetadata>() {
       @Override
       public IRubyObject transform(RecordMetadata value) {
-        return RecordMetadataWrapper.create(ctx.runtime, value);
+        return RecordMetadataWrapper.create(runtime, value);
       }
     });
   }

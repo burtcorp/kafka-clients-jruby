@@ -230,18 +230,19 @@ public class ConsumerWrapper extends RubyObject {
   }
 
   @JRubyMethod(name = "commit_async", optional = 1)
-  public IRubyObject commitAsync(final ThreadContext ctx, IRubyObject[] args, final Block block) {
+  public IRubyObject commitAsync(ThreadContext ctx, IRubyObject[] args, final Block block) {
     final RubyProc callback = block.isGiven() ? ctx.runtime.newProc(Block.Type.PROC, block) : null;
+    final Ruby runtime = ctx.runtime;
     OffsetCommitCallback commitCallback = new OffsetCommitCallback() {
       @Override
       public void onComplete(Map<TopicPartition, OffsetAndMetadata> syncOffsets, Exception exception) {
         if (callback != null) {
-          IRubyObject error = ctx.runtime.getNil();
+          IRubyObject error = runtime.getNil();
           if (exception != null) {
-            RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(ctx.runtime, exception);
-            error = errorClass.newInstance(ctx, ctx.runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
+            RubyClass errorClass = KafkaClientsLibrary.mapErrorClass(runtime, exception);
+            error = errorClass.newInstance(runtime.getCurrentContext(), runtime.newString(exception.getMessage()), Block.NULL_BLOCK);
           }
-          callback.call(ctx, new IRubyObject[] {fromOffsets(ctx, syncOffsets), error});
+          callback.call(runtime.getCurrentContext(), new IRubyObject[] {fromOffsets(runtime.getCurrentContext(), syncOffsets), error});
         }
       }
     };
