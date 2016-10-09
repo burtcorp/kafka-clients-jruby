@@ -26,6 +26,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
@@ -194,6 +195,10 @@ public class ConsumerWrapper extends RubyObject {
         if (value instanceof OffsetAndMetadataWrapper) {
           TopicPartition tp = ((TopicPartitionWrapper) key).topicPartition();
           OffsetAndMetadata om = ((OffsetAndMetadataWrapper) value).offsetAndMetadata();
+          syncOffsets.put(tp, om);
+        } else if (value instanceof RubyInteger) {
+          TopicPartition tp = ((TopicPartitionWrapper) key).topicPartition();
+          OffsetAndMetadata om = new OffsetAndMetadata(((RubyInteger) value).getLongValue());
           syncOffsets.put(tp, om);
         } else {
           throw ctx.runtime.newTypeError(value, ctx.runtime.getClassFromPath("Kafka::Clients::OffsetAndMetadata"));

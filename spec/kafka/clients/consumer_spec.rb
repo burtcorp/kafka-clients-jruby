@@ -338,15 +338,32 @@ module Kafka
           it 'synchronously commits specific offsets' do
             consumer_records = consumer.poll(0)
             offsets = {
-              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0, ''),
-              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1, ''),
-              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4, ''),
+              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0),
+              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1),
+              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4),
             }
             consumer.commit_sync(offsets)
             aggregate_failures do
               expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
               expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
               expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+            end
+          end
+
+          context 'and the offsets as integers' do
+            it 'synchronously commits specific offsets' do
+              consumer_records = consumer.poll(0)
+              offsets = {
+                TopicPartition.new('toptopic', 0) => 0,
+                TopicPartition.new('toptopic', 1) => 1,
+                TopicPartition.new('toptopic', 2) => 4,
+              }
+              consumer.commit_sync(offsets)
+              aggregate_failures do
+                expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
+                expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
+                expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+              end
             end
           end
         end
@@ -381,9 +398,9 @@ module Kafka
         context 'with arguments' do
           let :offsets do
             {
-              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0, ''),
-              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1, ''),
-              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4, ''),
+              TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0),
+              TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1),
+              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4),
             }
           end
 
@@ -403,6 +420,35 @@ module Kafka
                 committed_offsets = offsets
               end
               expect(committed_offsets).to contain_exactly(*offsets)
+            end
+          end
+
+          context 'and the offsets as integers' do
+            let :offsets do
+              {
+                TopicPartition.new('toptopic', 0) => 0,
+                TopicPartition.new('toptopic', 1) => 1,
+                TopicPartition.new('toptopic', 2) => 4,
+              }
+            end
+
+            it 'synchronously commits specific offsets' do
+              consumer.commit_async(offsets)
+              aggregate_failures do
+                expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
+                expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
+                expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+              end
+            end
+
+            context 'when given a block' do
+              it 'yields the committed offsets to the block when they have successfully been committed' do
+                committed_offsets = nil
+                consumer.commit_async(offsets) do |offsets|
+                  committed_offsets = offsets
+                end
+                expect(committed_offsets.values.map(&:offset)).to contain_exactly(*offsets.values)
+              end
             end
           end
         end
