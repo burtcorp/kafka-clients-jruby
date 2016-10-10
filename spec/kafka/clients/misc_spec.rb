@@ -180,13 +180,13 @@ module Kafka
         end
       end
 
-      context 'and :timeout is used' do
+      context 'and :request_timeout is used' do
         let :config do
-          {:timeout => 12.3}
+          {:request_timeout => 12.3}
         end
 
-        it 'changes the property to "timeout.ms" and the value to milliseconds' do
-          expect(kafka_config).to include('timeout.ms' => 12_300)
+        it 'changes the property to "request.timeout.ms" and the value to milliseconds' do
+          expect(kafka_config).to include('request.timeout.ms' => 12_300)
         end
       end
 
