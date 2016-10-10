@@ -195,8 +195,8 @@ module Kafka
           {:auto_commit => false}
         end
 
-        it 'changes the property to "auto.commit.enable"' do
-          expect(kafka_config).to include('auto.commit.enable' => false)
+        it 'changes the property to "enable.auto.commit"' do
+          expect(kafka_config).to include('enable.auto.commit' => false)
         end
       end
 

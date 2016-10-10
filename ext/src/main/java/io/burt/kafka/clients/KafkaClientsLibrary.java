@@ -96,7 +96,7 @@ public class KafkaClientsLibrary implements Library {
         } else if (keyStr.equals("timeout")) {
           kafkaConfig.put("timeout.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_commit")) {
-          kafkaConfig.put("auto.commit.enable", value.isTrue());
+          kafkaConfig.put("enable.auto.commit", value.isTrue());
         } else if (keyStr.equals("auto_commit_interval")) {
           kafkaConfig.put("auto.commit.interval.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_offset_reset")) {
