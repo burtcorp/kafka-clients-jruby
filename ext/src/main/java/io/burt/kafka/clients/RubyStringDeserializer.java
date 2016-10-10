@@ -20,7 +20,11 @@ public class RubyStringDeserializer implements Deserializer<IRubyObject> {
 
   @Override
   public IRubyObject deserialize(String topic, byte[] data) {
-    return runtime.newString(new ByteList(data));
+    if (data == null) {
+      return runtime.getNil();
+    } else {
+      return runtime.newString(new ByteList(data));
+    }
   }
 
   @Override

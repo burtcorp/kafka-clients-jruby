@@ -130,6 +130,28 @@ module Kafka
           end
         end
 
+        context 'when the key is nil' do
+          it 'serializes and deserializes it correctly' do
+            future = producer.send(topic_names.first, nil, 'world')
+            future.get(timeout: 5)
+            consumer_records = consume_records(topic_names.first)
+            aggregate_failures do
+              expect(consumer_records.first.key).to be_nil
+            end
+          end
+        end
+
+        context 'when the value is nil' do
+          it 'serializes and deserializes it correctly' do
+            future = producer.send(topic_names.first, 'hello', nil)
+            future.get(timeout: 5)
+            consumer_records = consume_records(topic_names.first)
+            aggregate_failures do
+              expect(consumer_records.first.value).to be_nil
+            end
+          end
+        end
+
         it 'returns a future that resolves to a record metadata object describing the saved record' do
           metadata = producer.send(topic_names.first, 'hello', 'world').get(timeout: 5)
           aggregate_failures do

@@ -11,7 +11,13 @@ public class RubyStringSerializer implements Serializer<IRubyObject> {
 
   @Override
   public byte[] serialize(String topic, IRubyObject data) {
-    return data.asString().getBytes();
+    if (data == null) {
+      return null;
+    } else if (data.isNil()) {
+      return null;
+    } else {
+      return data.asString().getBytes();
+    }
   }
 
   @Override

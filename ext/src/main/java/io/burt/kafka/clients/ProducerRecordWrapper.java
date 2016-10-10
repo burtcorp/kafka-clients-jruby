@@ -79,6 +79,12 @@ public class ProducerRecordWrapper extends RubyObject {
     if (!timestamp.isNil()) {
       ts = (long) (timestamp.convertToFloat().getDoubleValue() * 1000);
     }
+    if (key.isNil()) {
+      key = null;
+    }
+    if (value.isNil()) {
+      value = null;
+    }
     return new ProducerRecord<>(topic.asJavaString(), p, ts, key, value);
   }
 
@@ -104,13 +110,23 @@ public class ProducerRecordWrapper extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject key() {
-    return record.key();
+  public IRubyObject key(ThreadContext ctx) {
+    IRubyObject k = record.key();
+    if (k == null) {
+      return ctx.runtime.getNil();
+    } else {
+      return k;
+    }
   }
 
   @JRubyMethod
-  public IRubyObject value() {
-    return record.value();
+  public IRubyObject value(ThreadContext ctx) {
+    IRubyObject v = record.value();
+    if (v == null) {
+      return ctx.runtime.getNil();
+    } else {
+      return v;
+    }
   }
 
   @JRubyMethod
