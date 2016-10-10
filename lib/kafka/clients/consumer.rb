@@ -20,10 +20,21 @@ module Kafka
       #     but in seconds, _not milliseconds_
       #   @option configuration [#deserialize] :key_deserializer An object that
       #     will receive `#deserialize` with the string serialization of the key
-      #     and that will return the deserialized version of that key
+      #     and that will return the deserialized version of that key. The input
+      #     to the deserializer is affected by the `:encoding` configuration.
+      #     The default deserializer interprets the key as a string.
       #   @option configuration [#deserialize] :value_deserializer An object that
       #     will receive `#deserialize` with the string serialization of the value
-      #     and that will return the deserialized version of that value
+      #     and that will return the deserialized version of that value. The input
+      #     to the deserializer is affected by the `:encoding` configuration.
+      #     The default deserializer returns strings.
+      #     The default deserializer interprets the value as a string.
+      #   @option configuration [Encoding] :encoding The encoding to use for
+      #     deserialized keys and values (default to `Encoding.default_external`).
+      #     This encoding is applied (using something like `#force_encoding`) to
+      #     strings before any custom deserialization happens, so if you're
+      #     setting `:key_deserializer` and/or `:value_deserializer` you might
+      #     want to set this configuration too.
       #   @return [self]
 
       # @!method close

@@ -201,6 +201,36 @@ module Kafka
             end
           end
 
+          it 'tags the key and value with the default external encoding' do
+            default_encoding = ::Encoding.default_external
+            begin
+              ::Encoding.default_external = ::Encoding::Shift_JIS
+              consumer.seek_to_beginning(consumer.assignment)
+              consumer_records = consumer.poll(1)
+              aggregate_failures do
+                expect(consumer_records.first.key.encoding).to eq(::Encoding::Shift_JIS)
+                expect(consumer_records.first.value.encoding).to eq(::Encoding::Shift_JIS)
+              end
+            ensure
+              ::Encoding.default_external = default_encoding
+            end
+          end
+
+          context 'and the :encoding configuration is set' do
+            let :config do
+              super().merge(encoding: ::Encoding::CP932)
+            end
+
+            it 'tags the key and value with the specified encoding' do
+              consumer.seek_to_beginning(consumer.assignment)
+              consumer_records = consumer.poll(1)
+              aggregate_failures do
+                expect(consumer_records.first.key.encoding).to eq(::Encoding::CP932)
+                expect(consumer_records.first.value.encoding).to eq(::Encoding::CP932)
+              end
+            end
+          end
+
           context 'and given a custom key deserializer' do
             let :config do
               super().merge(key_deserializer: deserializer)

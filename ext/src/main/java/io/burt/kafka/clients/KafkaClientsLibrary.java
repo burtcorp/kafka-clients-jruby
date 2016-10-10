@@ -27,6 +27,7 @@ public class KafkaClientsLibrary implements Library {
   static final String KEY_SERIALIZER_CONFIG = SERIALIZER_CONFIG_PREFIX + "key";
   static final String PARTITIONER_CONFIG = "io.burt.kafka.clients.partitioner";
   static final String RUNTIME_CONFIG = "io.burt.kafka.clients.runtime";
+  static final String ENCODING_CONFIG = "io.burt.kafka.clients.encoding";
 
   public void load(Ruby runtime, boolean wrap) {
     RubyModule kafkaClientsModule = KafkaClients.install(runtime);
@@ -128,6 +129,8 @@ public class KafkaClientsLibrary implements Library {
           kafkaConfig.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_offset_reset")) {
           kafkaConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, value.convertToString().asJavaString());
+        } else if (keyStr.equals("encoding")) {
+          kafkaConfig.put(ENCODING_CONFIG, value);
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
