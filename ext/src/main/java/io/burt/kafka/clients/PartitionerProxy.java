@@ -8,16 +8,17 @@ import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PartitionerProxy implements Partitioner {
+  private Ruby runtime;
   private IRubyObject partitioner;
 
   @Override
   public void configure(Map<String, ?> config) {
+    runtime = (Ruby) config.get(KafkaClientsLibrary.RUNTIME_CONFIG);
     partitioner = (IRubyObject) config.get(KafkaClientsLibrary.PARTITIONER_CONFIG);
   }
 
   @Override
   public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster) {
-    Ruby runtime = partitioner.getRuntime();
     ClusterWrapper clusterWrapper = ClusterWrapper.create(runtime, cluster);
     IRubyObject[] args = new IRubyObject[] {runtime.newString(topic), (IRubyObject) key, (IRubyObject) value, clusterWrapper};
     IRubyObject partition = partitioner.callMethod(runtime.getCurrentContext(), "partition", args);
