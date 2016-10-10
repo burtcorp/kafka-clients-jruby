@@ -12,7 +12,7 @@ public class PartitionerProxy implements Partitioner {
 
   @Override
   public void configure(Map<String, ?> config) {
-    partitioner = (IRubyObject) config.get("io.burt.kafka.clients.partitioner");
+    partitioner = (IRubyObject) config.get(KafkaClientsLibrary.PARTITIONER_CONFIG);
   }
 
   @Override

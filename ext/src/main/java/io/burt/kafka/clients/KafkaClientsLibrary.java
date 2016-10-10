@@ -19,6 +19,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 public class KafkaClientsLibrary implements Library {
+  static final String DESERIALIZER_CONFIG_PREFIX = "io.burt.kafka.clients.deserializer.";
+  static final String VALUE_DESERIALIZER_CONFIG = DESERIALIZER_CONFIG_PREFIX + "value";
+  static final String KEY_DESERIALIZER_CONFIG = DESERIALIZER_CONFIG_PREFIX + "key";
+  static final String SERIALIZER_CONFIG_PREFIX = "io.burt.kafka.clients.serializer.";
+  static final String VALUE_SERIALIZER_CONFIG = SERIALIZER_CONFIG_PREFIX + "value";
+  static final String KEY_SERIALIZER_CONFIG = SERIALIZER_CONFIG_PREFIX + "key";
+  static final String PARTITIONER_CONFIG = "io.burt.kafka.clients.partitioner";
+  static final String RUNTIME_CONFIG = "io.burt.kafka.clients.runtime";
+
   public void load(Ruby runtime, boolean wrap) {
     RubyModule kafkaClientsModule = KafkaClients.install(runtime);
     ProducerWrapper.install(runtime, kafkaClientsModule);
@@ -80,19 +89,19 @@ public class KafkaClientsLibrary implements Library {
           kafkaConfig.put(ConsumerConfig.GROUP_ID_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("partitioner")) {
           kafkaConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "io.burt.kafka.clients.PartitionerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
+          kafkaConfig.put(PARTITIONER_CONFIG, value);
         } else if (keyStr.equals("key_serializer")) {
           kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.serializer.key", value);
+          kafkaConfig.put(KEY_SERIALIZER_CONFIG, value);
         } else if (keyStr.equals("value_serializer")) {
           kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.serializer.value", value);
+          kafkaConfig.put(VALUE_SERIALIZER_CONFIG, value);
         } else if (keyStr.equals("key_deserializer")) {
           kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.deserializer.key", value);
+          kafkaConfig.put(KEY_DESERIALIZER_CONFIG, value);
         } else if (keyStr.equals("value_deserializer")) {
           kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
-          kafkaConfig.put("io.burt.kafka.clients.deserializer.value", value);
+          kafkaConfig.put(VALUE_DESERIALIZER_CONFIG, value);
         } else if (keyStr.equals("acks")) {
           kafkaConfig.put(ProducerConfig.ACKS_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("compression_type")) {
@@ -124,7 +133,7 @@ public class KafkaClientsLibrary implements Library {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
       }
     }
-    kafkaConfig.put("io.burt.kafka.clients.runtime", config.getRuntime());
+    kafkaConfig.put(RUNTIME_CONFIG, config.getRuntime());
     return kafkaConfig;
   }
 }

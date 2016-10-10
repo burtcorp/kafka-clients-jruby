@@ -13,7 +13,7 @@ public class RubyStringDeserializer implements Deserializer<IRubyObject> {
 
   @Override
   public void configure(Map<String, ?> config, boolean isKey) {
-    runtime = (Ruby) config.get("io.burt.kafka.clients.runtime");
+    runtime = (Ruby) config.get(KafkaClientsLibrary.RUNTIME_CONFIG);
   }
 
   @Override

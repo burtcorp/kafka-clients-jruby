@@ -10,7 +10,7 @@ public class SerializerProxy extends RubyStringSerializer {
   @Override
   public void configure(Map<String, ?> config, boolean isKey) {
     super.configure(config, isKey);
-    serializer = (IRubyObject) config.get(String.format("io.burt.kafka.clients.serializer.%s", isKey ? "key" : "value"));
+    serializer = (IRubyObject) config.get(KafkaClientsLibrary.SERIALIZER_CONFIG_PREFIX + (isKey ? "key" : "value"));
   }
 
   @Override

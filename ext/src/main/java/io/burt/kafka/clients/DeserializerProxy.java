@@ -10,7 +10,7 @@ public class DeserializerProxy extends RubyStringDeserializer {
   @Override
   public void configure(Map<String, ?> config, boolean isKey) {
     super.configure(config, isKey);
-    deserializer = (IRubyObject) config.get(String.format("io.burt.kafka.clients.deserializer.%s", isKey ? "key" : "value"));
+    deserializer = (IRubyObject) config.get(KafkaClientsLibrary.DESERIALIZER_CONFIG_PREFIX + (isKey ? "key" : "value"));
   }
 
   @Override
