@@ -9,14 +9,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class RubyStringDeserializer implements Deserializer<IRubyObject> {
-  private final Ruby runtime;
-
-  public RubyStringDeserializer(Ruby runtime) {
-    this.runtime = runtime;
-  }
+  protected Ruby runtime;
 
   @Override
-  public void configure(Map<String, ?> configs, boolean isKey) { }
+  public void configure(Map<String, ?> config, boolean isKey) {
+    runtime = (Ruby) config.get("io.burt.kafka.clients.runtime");
+  }
 
   @Override
   public IRubyObject deserialize(String topic, byte[] data) {

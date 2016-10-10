@@ -33,6 +33,58 @@ module Kafka
         end
       end
 
+      describe '#close' do
+        context 'with a custom key serializer' do
+          let :config do
+            super().merge(key_serializer: serializer)
+          end
+
+          let :serializer do
+            double(:serializer, close: nil)
+          end
+
+          it 'calls #close on the serializer' do
+            producer.close
+            expect(serializer).to have_received(:close)
+          end
+
+          context 'but the serializer does not implement #close' do
+            let :serializer do
+              double(:serializer)
+            end
+
+            it 'does not call #close on the serializer' do
+              expect { producer.close }.to_not raise_error
+            end
+          end
+        end
+
+        context 'with a custom value serializer' do
+          let :config do
+            super().merge(value_serializer: serializer)
+          end
+
+          let :serializer do
+            double(:serializer, close: nil)
+          end
+
+          it 'calls #close on the serializer' do
+            producer.close
+            expect(serializer).to have_received(:close)
+          end
+
+          context 'but the serializer does not implement #close' do
+            let :serializer do
+              double(:serializer)
+            end
+
+            it 'does not call #close on the serializer' do
+              expect { producer.close }.to_not raise_error
+            end
+          end
+        end
+      end
+
       describe '#send' do
         def consume_records(topic_name_or_partition)
           case topic_name_or_partition
@@ -254,6 +306,52 @@ module Kafka
               expect(cluster.available_partitions_for_topic(partition.topic)).to be_an(Array)
               expect(cluster.partitions_for_node(partition.leader.id)).to include(partition)
               expect(cluster.partition_count_for_topic(partition.topic)).to be_a(Fixnum)
+            end
+          end
+        end
+
+        context 'when given a custom key serializer' do
+          let :config do
+            super().merge(key_serializer: serializer)
+          end
+
+          let :serializer do
+            double(:serializer)
+          end
+
+          before do
+            allow(serializer).to receive(:serialize) { |s| s.reverse }
+          end
+
+          it 'uses the serializer to serialize keys' do
+            future = producer.send(topic_names.first, 'hello', 'world')
+            future.get(timeout: 5)
+            consumer_records = consume_records(topic_names.first)
+            aggregate_failures do
+              expect(consumer_records.first.key).to eq('olleh')
+            end
+          end
+        end
+
+        context 'when given a custom value serializer' do
+          let :config do
+            super().merge(value_serializer: serializer)
+          end
+
+          let :serializer do
+            double(:serializer)
+          end
+
+          before do
+            allow(serializer).to receive(:serialize) { |s| s.reverse }
+          end
+
+          it 'uses the serializer to serialize values' do
+            future = producer.send(topic_names.first, 'hello', 'world')
+            future.get(timeout: 5)
+            consumer_records = consume_records(topic_names.first)
+            aggregate_failures do
+              expect(consumer_records.first.value).to eq('dlrow')
             end
           end
         end

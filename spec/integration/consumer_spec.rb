@@ -49,6 +49,56 @@ module Kafka
         it 'closes the consumer' do
           consumer.close
         end
+
+        context 'with a custom key deserializer' do
+          let :config do
+            super().merge(key_deserializer: deserializer)
+          end
+
+          let :deserializer do
+            double(:deserializer, close: nil)
+          end
+
+          it 'calls #close on the deserializer' do
+            consumer.close
+            expect(deserializer).to have_received(:close)
+          end
+
+          context 'but the deserializer does not implement #close' do
+            let :deserializer do
+              double(:deserializer)
+            end
+
+            it 'does not call #close on the deserializer' do
+              expect { consumer.close }.to_not raise_error
+            end
+          end
+        end
+
+        context 'with a custom value deserializer' do
+          let :config do
+            super().merge(value_deserializer: deserializer)
+          end
+
+          let :deserializer do
+            double(:deserializer, close: nil)
+          end
+
+          it 'calls #close on the deserializer' do
+            consumer.close
+            expect(deserializer).to have_received(:close)
+          end
+
+          context 'but the deserializer does not implement #close' do
+            let :deserializer do
+              double(:deserializer)
+            end
+
+            it 'does not call #close on the deserializer' do
+              expect { consumer.close }.to_not raise_error
+            end
+          end
+        end
       end
 
       describe '#partitions_for' do
@@ -148,6 +198,46 @@ module Kafka
               expect(consumer_records.first.value).to match(/\Aworld\d+\Z/)
               expect(consumer_records.first.timestamp).to be_a(Time)
               expect(consumer_records.first.timestamp_type).to eq(:create_time)
+            end
+          end
+
+          context 'and given a custom key deserializer' do
+            let :config do
+              super().merge(key_deserializer: deserializer)
+            end
+
+            let :deserializer do
+              double(:deserializer).tap do |d|
+                allow(d).to receive(:deserialize) { |s| s.reverse }
+              end
+            end
+
+            it 'uses the deserializer to deserialize the key' do
+              consumer.seek_to_beginning(consumer.assignment)
+              consumer_records = consumer.poll(1)
+              aggregate_failures do
+                expect(consumer_records.first.key).to match(/\A\d+olleh\Z/)
+              end
+            end
+          end
+
+          context 'and given a custom value deserializer' do
+            let :config do
+              super().merge(value_deserializer: deserializer)
+            end
+
+            let :deserializer do
+              double(:deserializer).tap do |d|
+                allow(d).to receive(:deserialize) { |s| s.reverse }
+              end
+            end
+
+            it 'uses the deserializer to deserialize the value' do
+              consumer.seek_to_beginning(consumer.assignment)
+              consumer_records = consumer.poll(1)
+              aggregate_failures do
+                expect(consumer_records.first.value).to match(/\A\d+dlrow\Z/)
+              end
             end
           end
         end

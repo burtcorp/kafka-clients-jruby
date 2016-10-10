@@ -18,6 +18,12 @@ module Kafka
       #   @option configuration [true, false] :auto_offset_reset Alias for `auto.offset.reset`
       #   @option configuration [Float] :request_timeout Alias for `request.timeout.ms`,
       #     but in seconds, _not milliseconds_
+      #   @option configuration [#deserialize] :key_deserializer An object that
+      #     will receive `#deserialize` with the string serialization of the key
+      #     and that will return the deserialized version of that key
+      #   @option configuration [#deserialize] :value_deserializer An object that
+      #     will receive `#deserialize` with the string serialization of the value
+      #     and that will return the deserialized version of that value
       #   @return [self]
 
       # @!method close

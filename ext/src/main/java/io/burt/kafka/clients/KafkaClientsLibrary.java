@@ -57,6 +57,10 @@ public class KafkaClientsLibrary implements Library {
   @SuppressWarnings("unchecked")
   static Map<String, Object> toKafkaConfiguration(RubyHash config) {
     Map<String, Object> kafkaConfig = new HashMap<>();
+    kafkaConfig.put("key.serializer", "io.burt.kafka.clients.RubyStringSerializer");
+    kafkaConfig.put("value.serializer", "io.burt.kafka.clients.RubyStringSerializer");
+    kafkaConfig.put("key.deserializer", "io.burt.kafka.clients.RubyStringDeserializer");
+    kafkaConfig.put("value.deserializer", "io.burt.kafka.clients.RubyStringDeserializer");
     for (IRubyObject key : (List<IRubyObject>) config.keys().getList()) {
       IRubyObject value = config.fastARef(key);
       if (key instanceof RubySymbol && !value.isNil()) {
@@ -75,6 +79,18 @@ public class KafkaClientsLibrary implements Library {
         } else if (keyStr.equals("partitioner")) {
           kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
           kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
+        } else if (keyStr.equals("key_serializer")) {
+          kafkaConfig.put("key.serializer", "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.serializer.key", value);
+        } else if (keyStr.equals("value_serializer")) {
+          kafkaConfig.put("value.serializer", "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.serializer.value", value);
+        } else if (keyStr.equals("key_deserializer")) {
+          kafkaConfig.put("key.deserializer", "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.deserializer.key", value);
+        } else if (keyStr.equals("value_deserializer")) {
+          kafkaConfig.put("value.deserializer", "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put("io.burt.kafka.clients.deserializer.value", value);
         } else if (keyStr.equals("acks")) {
           kafkaConfig.put("acks", value.asString().asJavaString());
         } else if (keyStr.equals("compression_type")) {
@@ -106,6 +122,7 @@ public class KafkaClientsLibrary implements Library {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
       }
     }
+    kafkaConfig.put("io.burt.kafka.clients.runtime", config.getRuntime());
     return kafkaConfig;
   }
 }

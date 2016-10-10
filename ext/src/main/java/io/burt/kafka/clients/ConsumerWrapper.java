@@ -20,7 +20,6 @@ import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.Deserializer;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -75,9 +74,8 @@ public class ConsumerWrapper extends RubyObject {
     if (kafkaConsumer == null) {
       if (args.length > 0) {
         try {
-          Deserializer<IRubyObject> deserializer = new RubyStringDeserializer(ctx.runtime);
           Map<String, Object> config = KafkaClientsLibrary.toKafkaConfiguration(args[0].convertToHash());
-          kafkaConsumer = new KafkaConsumer<>(config, deserializer, deserializer);
+          kafkaConsumer = new KafkaConsumer<>(config);
         } catch (KafkaException ke) {
           throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
         }

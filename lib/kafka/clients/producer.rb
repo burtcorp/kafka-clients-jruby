@@ -21,6 +21,12 @@ module Kafka
       #   @option configuration [Integer] :max_request_size Alias for `max.request.size`
       #   @option configuration [Float] :request_timeout Alias for `request.timeout.ms`,
       #     but in seconds, _not milliseconds_
+      #   @option configuration [#serialize] :key_serializer An object that
+      #     will receive `#serialize` with the key and that will return the
+      #     string serialization of that key
+      #   @option configuration [#deserialize] :value_serializer An object that
+      #     will receive `#serialize` with the value and that will return the
+      #     string serialization of that value
       #   @return [self]
 
       # @!method close(options=nil)
