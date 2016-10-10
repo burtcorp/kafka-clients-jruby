@@ -2,7 +2,22 @@ module Kafka
   module Clients
     class Consumer
       # @!method initialize(configuration)
-      #   @param configuration [Hash]
+      #   @param configuration [Hash] A set of key-value pairs to use as
+      #     configuration for the consumer. Common config parameters have symbol
+      #     aliases for convenience (see below), but the native string properties
+      #     can also be used.
+      #   @option configuration [String, Array<String>] :bootstrap_servers
+      #     Alias for `bootstrap.servers`, but in addition to a comma separated
+      #     list of servers it accepts an array.
+      #   @option configuration [String] :group_id Alias for `group.id`
+      #   @option configuration [String] :client_id Alias for `client.id`
+      #   @option configuration [Integer] :max_poll_records Alias for `max.poll.records`
+      #   @option configuration [true, false] :auto_commit alias for `enable.auto.commit`
+      #   @option configuration [Integer] :auto_commit_interval Alias for `auto.commit.interval.ms`,
+      #     but in seconds, _not milliseconds_
+      #   @option configuration [true, false] :auto_offset_reset Alias for `auto.offset.reset`
+      #   @option configuration [Float] :request_timeout Alias for `request.timeout.ms`,
+      #     but in seconds, _not milliseconds_
       #   @return [self]
 
       # @!method close
