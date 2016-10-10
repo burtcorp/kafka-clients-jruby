@@ -62,24 +62,6 @@ module Kafka
         end
       end
 
-      context 'and :partitioner is used' do
-        let :partitioner do
-          double(:partitioner)
-        end
-
-        let :config do
-          {:partitioner => partitioner}
-        end
-
-        it 'sets the partitioner class to a proxy class' do
-          expect(kafka_config).to include('partitioner.class' => Java::IoBurtKafkaClients::PartitionerProxy.java_class)
-        end
-
-        it 'sets a property so that the proxy partitioner can find the partitioner object' do
-          expect(kafka_config).to include('io.burt.kafka.clients.partitioner' => partitioner)
-        end
-      end
-
       context 'and :acks is used' do
         let :config do
           {:acks => 4}
