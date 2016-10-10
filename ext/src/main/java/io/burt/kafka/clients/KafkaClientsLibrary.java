@@ -69,10 +69,10 @@ public class KafkaClientsLibrary implements Library {
   @SuppressWarnings("unchecked")
   static Map<String, Object> toKafkaConfiguration(RubyHash config) {
     Map<String, Object> kafkaConfig = new HashMap<>();
-    kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringSerializer");
-    kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringSerializer");
-    kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringDeserializer");
-    kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringDeserializer");
+    kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, RubyStringSerializer.class);
+    kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, RubyStringSerializer.class);
+    kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, RubyStringDeserializer.class);
+    kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, RubyStringDeserializer.class);
     for (IRubyObject key : (List<IRubyObject>) config.keys().getList()) {
       IRubyObject value = config.fastARef(key);
       if (key instanceof RubySymbol && !value.isNil()) {
@@ -89,19 +89,19 @@ public class KafkaClientsLibrary implements Library {
         } else if (keyStr.equals("group_id")) {
           kafkaConfig.put(ConsumerConfig.GROUP_ID_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("partitioner")) {
-          kafkaConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "io.burt.kafka.clients.PartitionerProxy");
+          kafkaConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, PartitionerProxy.class);
           kafkaConfig.put(PARTITIONER_CONFIG, value);
         } else if (keyStr.equals("key_serializer")) {
-          kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, SerializerProxy.class);
           kafkaConfig.put(KEY_SERIALIZER_CONFIG, value);
         } else if (keyStr.equals("value_serializer")) {
-          kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, SerializerProxy.class);
           kafkaConfig.put(VALUE_SERIALIZER_CONFIG, value);
         } else if (keyStr.equals("key_deserializer")) {
-          kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, DeserializerProxy.class);
           kafkaConfig.put(KEY_DESERIALIZER_CONFIG, value);
         } else if (keyStr.equals("value_deserializer")) {
-          kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, DeserializerProxy.class);
           kafkaConfig.put(VALUE_DESERIALIZER_CONFIG, value);
         } else if (keyStr.equals("acks")) {
           kafkaConfig.put(ProducerConfig.ACKS_CONFIG, value.asString().asJavaString());

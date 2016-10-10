@@ -72,7 +72,7 @@ module Kafka
         end
 
         it 'sets the partitioner class to a proxy class' do
-          expect(kafka_config).to include('partitioner.class' => 'io.burt.kafka.clients.PartitionerProxy')
+          expect(kafka_config).to include('partitioner.class' => Java::IoBurtKafkaClients::PartitionerProxy.java_class)
         end
 
         it 'sets a property so that the proxy partitioner can find the partitioner object' do
