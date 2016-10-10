@@ -21,6 +21,10 @@ module Kafka
       #   @option configuration [Integer] :max_request_size Alias for `max.request.size`
       #   @option configuration [Float] :request_timeout Alias for `request.timeout.ms`,
       #     but in seconds, _not milliseconds_
+      #   @option configuration [#partition] :partitioner An object that will
+      #     receive `#partition` with the topic name, partition, key, value and
+      #     cluster metadata and that will return the partition that the record
+      #     should be sent to
       #   @option configuration [#serialize] :key_serializer An object that
       #     will receive `#serialize` with the key and that will return the
       #     string serialization of that key
