@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
 
 import org.jruby.Ruby;
@@ -57,10 +59,10 @@ public class KafkaClientsLibrary implements Library {
   @SuppressWarnings("unchecked")
   static Map<String, Object> toKafkaConfiguration(RubyHash config) {
     Map<String, Object> kafkaConfig = new HashMap<>();
-    kafkaConfig.put("key.serializer", "io.burt.kafka.clients.RubyStringSerializer");
-    kafkaConfig.put("value.serializer", "io.burt.kafka.clients.RubyStringSerializer");
-    kafkaConfig.put("key.deserializer", "io.burt.kafka.clients.RubyStringDeserializer");
-    kafkaConfig.put("value.deserializer", "io.burt.kafka.clients.RubyStringDeserializer");
+    kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringSerializer");
+    kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringSerializer");
+    kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringDeserializer");
+    kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.RubyStringDeserializer");
     for (IRubyObject key : (List<IRubyObject>) config.keys().getList()) {
       IRubyObject value = config.fastARef(key);
       if (key instanceof RubySymbol && !value.isNil()) {
@@ -73,50 +75,50 @@ public class KafkaClientsLibrary implements Library {
           } else {
             valueString = value.asString().asJavaString();
           }
-          kafkaConfig.put("bootstrap.servers", valueString);
+          kafkaConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, valueString);
         } else if (keyStr.equals("group_id")) {
-          kafkaConfig.put("group.id", value.asString().asJavaString());
+          kafkaConfig.put(ConsumerConfig.GROUP_ID_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("partitioner")) {
-          kafkaConfig.put("partitioner.class", "io.burt.kafka.clients.PartitionerProxy");
+          kafkaConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "io.burt.kafka.clients.PartitionerProxy");
           kafkaConfig.put("io.burt.kafka.clients.partitioner", value);
         } else if (keyStr.equals("key_serializer")) {
-          kafkaConfig.put("key.serializer", "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
           kafkaConfig.put("io.burt.kafka.clients.serializer.key", value);
         } else if (keyStr.equals("value_serializer")) {
-          kafkaConfig.put("value.serializer", "io.burt.kafka.clients.SerializerProxy");
+          kafkaConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.SerializerProxy");
           kafkaConfig.put("io.burt.kafka.clients.serializer.value", value);
         } else if (keyStr.equals("key_deserializer")) {
-          kafkaConfig.put("key.deserializer", "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
           kafkaConfig.put("io.burt.kafka.clients.deserializer.key", value);
         } else if (keyStr.equals("value_deserializer")) {
-          kafkaConfig.put("value.deserializer", "io.burt.kafka.clients.DeserializerProxy");
+          kafkaConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "io.burt.kafka.clients.DeserializerProxy");
           kafkaConfig.put("io.burt.kafka.clients.deserializer.value", value);
         } else if (keyStr.equals("acks")) {
-          kafkaConfig.put("acks", value.asString().asJavaString());
+          kafkaConfig.put(ProducerConfig.ACKS_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("compression_type")) {
-          kafkaConfig.put("compression.type", value.convertToString().asJavaString());
+          kafkaConfig.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, value.convertToString().asJavaString());
         } else if (keyStr.equals("retries")) {
-          kafkaConfig.put("retries", (int) value.convertToInteger().getLongValue());
+          kafkaConfig.put(ProducerConfig.RETRIES_CONFIG, (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("batch_size")) {
-          kafkaConfig.put("batch.size", (int) value.convertToInteger().getLongValue());
+          kafkaConfig.put(ProducerConfig.BATCH_SIZE_CONFIG, (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("client_id")) {
-          kafkaConfig.put("client.id", value.asString().asJavaString());
+          kafkaConfig.put(ProducerConfig.CLIENT_ID_CONFIG, value.asString().asJavaString());
         } else if (keyStr.equals("linger")) {
-          kafkaConfig.put("linger.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+          kafkaConfig.put(ProducerConfig.LINGER_MS_CONFIG, (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("max_block")) {
-          kafkaConfig.put("max.block.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+          kafkaConfig.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("max_request_size")) {
-          kafkaConfig.put("max.request.size", (int) value.convertToInteger().getLongValue());
+          kafkaConfig.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("max_poll_records")) {
-          kafkaConfig.put("max.poll.records", (int) value.convertToInteger().getLongValue());
+          kafkaConfig.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, (int) value.convertToInteger().getLongValue());
         } else if (keyStr.equals("request_timeout")) {
-          kafkaConfig.put("request.timeout.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+          kafkaConfig.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_commit")) {
-          kafkaConfig.put("enable.auto.commit", value.isTrue());
+          kafkaConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, value.isTrue());
         } else if (keyStr.equals("auto_commit_interval")) {
-          kafkaConfig.put("auto.commit.interval.ms", (int) (value.convertToFloat().getDoubleValue() * 1000));
+          kafkaConfig.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, (int) (value.convertToFloat().getDoubleValue() * 1000));
         } else if (keyStr.equals("auto_offset_reset")) {
-          kafkaConfig.put("auto.offset.reset", value.convertToString().asJavaString());
+          kafkaConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, value.convertToString().asJavaString());
         }
       } else if (!value.isNil()) {
         kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
