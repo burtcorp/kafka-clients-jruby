@@ -31,6 +31,26 @@ module Kafka
             expect(producer.partitions_for(topic_names.first)).to_not be_empty
           end
         end
+
+        context 'when given a key serializer that does not implement #serialize or #call' do
+          let :config do
+            super().merge(key_serializer: double(:bad_serializer))
+          end
+
+          it 'raises an error' do
+            expect { producer }.to raise_error(Kafka::Clients::KafkaError)
+          end
+        end
+
+        context 'when given a value serializer that does not implement #serialize or #call' do
+          let :config do
+            super().merge(value_serializer: double(:bad_serializer))
+          end
+
+          it 'raises an error' do
+            expect { producer }.to raise_error(Kafka::Clients::KafkaError)
+          end
+        end
       end
 
       describe '#close' do
@@ -40,7 +60,7 @@ module Kafka
           end
 
           let :serializer do
-            double(:serializer, close: nil)
+            double(:serializer, close: nil, serialize: nil)
           end
 
           it 'calls #close on the serializer' do
@@ -50,7 +70,7 @@ module Kafka
 
           context 'but the serializer does not implement #close' do
             let :serializer do
-              double(:serializer)
+              double(:serializer, serialize: nil)
             end
 
             it 'does not call #close on the serializer' do
@@ -65,7 +85,7 @@ module Kafka
           end
 
           let :serializer do
-            double(:serializer, close: nil)
+            double(:serializer, close: nil, serialize: nil)
           end
 
           it 'calls #close on the serializer' do
@@ -75,7 +95,7 @@ module Kafka
 
           context 'but the serializer does not implement #close' do
             let :serializer do
-              double(:serializer)
+              double(:serializer, serialize: nil)
             end
 
             it 'does not call #close on the serializer' do
@@ -340,20 +360,37 @@ module Kafka
             super().merge(key_serializer: serializer)
           end
 
-          let :serializer do
-            double(:serializer)
+          context 'that implements #serialize' do
+            let :serializer do
+              double(:serializer)
+            end
+
+            before do
+              allow(serializer).to receive(:serialize) { |s| s.reverse }
+            end
+
+            it 'uses the serializer to serialize keys' do
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              consumer_records = consume_records(topic_names.first)
+              aggregate_failures do
+                expect(consumer_records.first.key).to eq('olleh')
+              end
+            end
           end
 
-          before do
-            allow(serializer).to receive(:serialize) { |s| s.reverse }
-          end
+          context 'that implements #call' do
+            let :serializer do
+              lambda { |s| s.reverse }
+            end
 
-          it 'uses the serializer to serialize keys' do
-            future = producer.send(topic_names.first, 'hello', 'world')
-            future.get(timeout: 5)
-            consumer_records = consume_records(topic_names.first)
-            aggregate_failures do
-              expect(consumer_records.first.key).to eq('olleh')
+            it 'uses the serializer to serialize keys' do
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              consumer_records = consume_records(topic_names.first)
+              aggregate_failures do
+                expect(consumer_records.first.key).to eq('olleh')
+              end
             end
           end
         end
@@ -363,20 +400,37 @@ module Kafka
             super().merge(value_serializer: serializer)
           end
 
-          let :serializer do
-            double(:serializer)
+          context 'that implements #serialize' do
+            let :serializer do
+              double(:serializer)
+            end
+
+            before do
+              allow(serializer).to receive(:serialize) { |s| s.reverse }
+            end
+
+            it 'uses the serializer to serialize values' do
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              consumer_records = consume_records(topic_names.first)
+              aggregate_failures do
+                expect(consumer_records.first.value).to eq('dlrow')
+              end
+            end
           end
 
-          before do
-            allow(serializer).to receive(:serialize) { |s| s.reverse }
-          end
+          context 'that implements #call' do
+            let :serializer do
+              proc { |s| s.reverse }
+            end
 
-          it 'uses the serializer to serialize values' do
-            future = producer.send(topic_names.first, 'hello', 'world')
-            future.get(timeout: 5)
-            consumer_records = consume_records(topic_names.first)
-            aggregate_failures do
-              expect(consumer_records.first.value).to eq('dlrow')
+            it 'uses the serializer to serialize values' do
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              consumer_records = consume_records(topic_names.first)
+              aggregate_failures do
+                expect(consumer_records.first.value).to eq('dlrow')
+              end
             end
           end
         end

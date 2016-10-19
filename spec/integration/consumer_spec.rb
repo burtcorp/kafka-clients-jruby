@@ -43,6 +43,26 @@ module Kafka
             expect { consumer.poll(0) }.to_not raise_error
           end
         end
+
+        context 'when given a key deserializer that does not implement #deserialize or #call' do
+          let :config do
+            super().merge(key_deserializer: double(:bad_deserializer))
+          end
+
+          it 'raises an error' do
+            expect { consumer }.to raise_error(Kafka::Clients::KafkaError)
+          end
+        end
+
+        context 'when given a value deserializer that does not implement #deserialize or #call' do
+          let :config do
+            super().merge(value_deserializer: double(:bad_deserializer))
+          end
+
+          it 'raises an error' do
+            expect { consumer }.to raise_error(Kafka::Clients::KafkaError)
+          end
+        end
       end
 
       describe '#close' do
@@ -56,7 +76,7 @@ module Kafka
           end
 
           let :deserializer do
-            double(:deserializer, close: nil)
+            double(:deserializer, close: nil, deserialize: nil)
           end
 
           it 'calls #close on the deserializer' do
@@ -66,7 +86,7 @@ module Kafka
 
           context 'but the deserializer does not implement #close' do
             let :deserializer do
-              double(:deserializer)
+              double(:deserializer, deserialize: nil)
             end
 
             it 'does not call #close on the deserializer' do
@@ -81,7 +101,7 @@ module Kafka
           end
 
           let :deserializer do
-            double(:deserializer, close: nil)
+            double(:deserializer, close: nil, deserialize: nil)
           end
 
           it 'calls #close on the deserializer' do
@@ -91,7 +111,7 @@ module Kafka
 
           context 'but the deserializer does not implement #close' do
             let :deserializer do
-              double(:deserializer)
+              double(:deserializer, deserialize: nil)
             end
 
             it 'does not call #close on the deserializer' do
@@ -236,17 +256,33 @@ module Kafka
               super().merge(key_deserializer: deserializer)
             end
 
-            let :deserializer do
-              double(:deserializer).tap do |d|
-                allow(d).to receive(:deserialize) { |s| s.reverse }
+            context 'that implements #deserialize' do
+              let :deserializer do
+                double(:deserializer).tap do |d|
+                  allow(d).to receive(:deserialize) { |s| s.reverse }
+                end
+              end
+
+              it 'uses the deserializer to deserialize the key' do
+                consumer.seek_to_beginning(consumer.assignment)
+                consumer_records = consumer.poll(1)
+                aggregate_failures do
+                  expect(consumer_records.first.key).to match(/\A\d+olleh\Z/)
+                end
               end
             end
 
-            it 'uses the deserializer to deserialize the key' do
-              consumer.seek_to_beginning(consumer.assignment)
-              consumer_records = consumer.poll(1)
-              aggregate_failures do
-                expect(consumer_records.first.key).to match(/\A\d+olleh\Z/)
+            context 'that implements #call' do
+              let :deserializer do
+                lambda { |s| s.reverse }
+              end
+
+              it 'uses the deserializer to deserialize the key' do
+                consumer.seek_to_beginning(consumer.assignment)
+                consumer_records = consumer.poll(1)
+                aggregate_failures do
+                  expect(consumer_records.first.key).to match(/\A\d+olleh\Z/)
+                end
               end
             end
           end
@@ -256,17 +292,33 @@ module Kafka
               super().merge(value_deserializer: deserializer)
             end
 
-            let :deserializer do
-              double(:deserializer).tap do |d|
-                allow(d).to receive(:deserialize) { |s| s.reverse }
+            context 'that implements #deserialize' do
+              let :deserializer do
+                double(:deserializer).tap do |d|
+                  allow(d).to receive(:deserialize) { |s| s.reverse }
+                end
+              end
+
+              it 'uses the deserializer to deserialize the value' do
+                consumer.seek_to_beginning(consumer.assignment)
+                consumer_records = consumer.poll(1)
+                aggregate_failures do
+                  expect(consumer_records.first.value).to match(/\A\d+dlrow\Z/)
+                end
               end
             end
 
-            it 'uses the deserializer to deserialize the value' do
-              consumer.seek_to_beginning(consumer.assignment)
-              consumer_records = consumer.poll(1)
-              aggregate_failures do
-                expect(consumer_records.first.value).to match(/\A\d+dlrow\Z/)
+            context 'that implements #call' do
+              let :deserializer do
+                proc { |s| s.reverse }
+              end
+
+              it 'uses the deserializer to deserialize the value' do
+                consumer.seek_to_beginning(consumer.assignment)
+                consumer_records = consumer.poll(1)
+                aggregate_failures do
+                  expect(consumer_records.first.value).to match(/\A\d+dlrow\Z/)
+                end
               end
             end
           end
