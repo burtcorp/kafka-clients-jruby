@@ -51,6 +51,16 @@ module Kafka
             expect { producer }.to raise_error(Kafka::Clients::KafkaError)
           end
         end
+
+        context 'when given a partitioner that does not implement #partition or #call' do
+          let :config do
+            super().merge(partitioner: double(:bad_partitioner))
+          end
+
+          it 'raises an error' do
+            expect { producer }.to raise_error(Kafka::Clients::KafkaError)
+          end
+        end
       end
 
       describe '#close' do
@@ -110,7 +120,7 @@ module Kafka
           end
 
           let :partitioner do
-            double(:partitioner, close: nil)
+            double(:partitioner, close: nil, partition: nil)
           end
 
           it 'calls #close on the partitioner', pending: 'KafkaProducer never calls #close on partitioners' do
@@ -120,7 +130,7 @@ module Kafka
 
           context 'but the partitioner does not implement #close' do
             let :partitioner do
-              double(:partitioner)
+              double(:partitioner, partition: nil)
             end
 
             it 'does not call #close on the partitioner' do
@@ -307,50 +317,67 @@ module Kafka
             super().merge(partitioner: partitioner)
           end
 
-          let :partitioner do
-            double(:partitioner)
-          end
-
-          before do
-            allow(partitioner).to receive(:partition).and_return(0)
-            allow(partitioner).to receive(:close)
-          end
-
-          it 'uses the partitioner when sending records' do
-            future = producer.send(topic_names.first, 'hello', 'world')
-            future.get(timeout: 5)
-            expect(partitioner).to have_received(:partition).with(topic_names.first, 'hello', 'world', instance_of(Cluster))
-          end
-
-          it 'does not use the partitioner when sending a pre-partitioned record' do
-            future = producer.send(topic_names.first, 1, 'hello', 'world')
-            future.get(timeout: 5)
-            expect(partitioner).to_not have_received(:partition)
-          end
-
-          it 'passes a cluster object to the partitioner' do
-            cluster = nil
-            allow(partitioner).to receive(:partition) do |_, _, _, c|
-              cluster = c
-              0
+          shared_examples 'partitioner' do
+            let :partitioner do
+              double(:partitioner)
             end
-            future = producer.send(topic_names.first, 'hello', 'world')
-            future.get(timeout: 5)
-            partitions = producer.partitions_for(topic_names.first)
-            partition = partitions.first
-            aggregate_failures do
-              expect(cluster.nodes).to_not be_empty
-              expect(cluster.topics).to_not be_empty
-              expect(cluster.unauthorized_topics).to be_an(Array)
-              expect(cluster.bootstrap_configured?).to_not be_nil
-              expect(cluster.node_by_id(partition.leader.id)).to eq(partition.leader)
-              expect(cluster.leader_for(partition.topic, partition.partition)).to eq(partition.leader)
-              expect(cluster.leader_for(TopicPartition.new(partition.topic, partition.partition))).to eq(partition.leader)
-              expect(cluster.partition(TopicPartition.new(partition.topic, partition.partition))).to eq(partition)
-              expect(cluster.partitions_for_topic(partition.topic)).to eq(partitions)
-              expect(cluster.available_partitions_for_topic(partition.topic)).to be_an(Array)
-              expect(cluster.partitions_for_node(partition.leader.id)).to include(partition)
-              expect(cluster.partition_count_for_topic(partition.topic)).to be_a(Fixnum)
+
+            before do
+              allow(partitioner).to receive(partition_method_name).and_return(0)
+            end
+
+            it 'uses the partitioner when sending records' do
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              expect(partitioner).to have_received(partition_method_name).with(topic_names.first, 'hello', 'world', instance_of(Cluster))
+            end
+
+            it 'does not use the partitioner when sending a pre-partitioned record' do
+              future = producer.send(topic_names.first, 1, 'hello', 'world')
+              future.get(timeout: 5)
+              expect(partitioner).to_not have_received(partition_method_name)
+            end
+
+            it 'passes a cluster object to the partitioner' do
+              cluster = nil
+              allow(partitioner).to receive(partition_method_name) do |_, _, _, c|
+                cluster = c
+                0
+              end
+              future = producer.send(topic_names.first, 'hello', 'world')
+              future.get(timeout: 5)
+              partitions = producer.partitions_for(topic_names.first)
+              partition = partitions.first
+              aggregate_failures do
+                expect(cluster.nodes).to_not be_empty
+                expect(cluster.topics).to_not be_empty
+                expect(cluster.unauthorized_topics).to be_an(Array)
+                expect(cluster.bootstrap_configured?).to_not be_nil
+                expect(cluster.node_by_id(partition.leader.id)).to eq(partition.leader)
+                expect(cluster.leader_for(partition.topic, partition.partition)).to eq(partition.leader)
+                expect(cluster.leader_for(TopicPartition.new(partition.topic, partition.partition))).to eq(partition.leader)
+                expect(cluster.partition(TopicPartition.new(partition.topic, partition.partition))).to eq(partition)
+                expect(cluster.partitions_for_topic(partition.topic)).to eq(partitions)
+                expect(cluster.available_partitions_for_topic(partition.topic)).to be_an(Array)
+                expect(cluster.partitions_for_node(partition.leader.id)).to include(partition)
+                expect(cluster.partition_count_for_topic(partition.topic)).to be_a(Fixnum)
+              end
+            end
+          end
+
+          context 'that implements #partition' do
+            include_examples 'partitioner' do
+              let :partition_method_name do
+                :partition
+              end
+            end
+          end
+
+          context 'that implements #call' do
+            include_examples 'partitioner' do
+              let :partition_method_name do
+                :call
+              end
             end
           end
         end
