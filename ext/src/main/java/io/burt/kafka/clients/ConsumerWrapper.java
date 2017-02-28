@@ -253,6 +253,21 @@ public class ConsumerWrapper extends RubyObject {
   }
 
   @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject committed(ThreadContext ctx, IRubyObject[] args) {
+    TopicPartition tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
+    try {
+      OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
+      if (committedOffset != null) {
+        return OffsetAndMetadataWrapper.create(ctx.runtime, committedOffset);
+      } else {
+        return ctx.runtime.getNil();
+      }
+    } catch (IllegalArgumentException iae) {
+      throw ctx.runtime.newArgumentError(iae.getMessage());
+    }
+  }
+
+  @JRubyMethod(required = 1, optional = 1)
   public IRubyObject position(ThreadContext ctx, IRubyObject[] args) {
     TopicPartition tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
     try {

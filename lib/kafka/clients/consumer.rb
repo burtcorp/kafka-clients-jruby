@@ -69,6 +69,16 @@ module Kafka
       #   @yieldparam error [Kafka::Clients::KafkaError]
       #   @return [nil]
 
+      # @!method committed(topic_partition)
+      #   @return [OffsetAndMetadata]
+      #   @overload committed(topic_partition)
+      #     @param topic_partition [TopicPartition]
+      #     @return [OffsetAndMetadata]
+      #   @overload committed(topic, partition)
+      #     @param topic [String]
+      #     @param partition [OffsetAndMetadata]
+      #     @return [OffsetAndMetadata]
+
       # @!method position(topic_partition)
       #   @return [Integer]
       #   @overload position(topic_partition)
