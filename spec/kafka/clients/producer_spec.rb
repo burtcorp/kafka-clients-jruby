@@ -212,7 +212,8 @@ module Kafka
             Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 1, nodes[1], nodes, [nodes[1], nodes[2]]),
             Java::OrgApacheKafkaCommon::PartitionInfo.new('toptopic', 2, nodes[2], nodes, [nodes[0], nodes[2]]),
           ]
-          Java::OrgApacheKafkaCommon::Cluster.new(nodes, partitions, [])
+          constructor = Java::OrgApacheKafkaCommon::Cluster.java_class.constructors.detect {|c| c.parameter_types.length == 5}
+          constructor.new_instance('cluster-id'.to_java_string, nodes, partitions, [], [])
         end
 
         it 'returns partitions for a topic' do
