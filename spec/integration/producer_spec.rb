@@ -291,8 +291,8 @@ module Kafka
         end
 
         context 'when specifying a partition that does not exist' do
-          it 'raises ArgumentError' do
-            expect { producer.send(topic_names.first, 99, 'hello', 'world') }.to raise_error(ArgumentError, /99 is not in the range/)
+          it 'raises RuntimeError' do
+            expect { producer.send(topic_names.first, 99, 'hello', 'world') }.to raise_error(RuntimeError, /99 is not in the range/)
           end
         end
 
