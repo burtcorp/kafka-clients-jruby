@@ -326,6 +326,7 @@ module Kafka
 
         context 'when there are no records available' do
           it 'returns an empty enumerable' do
+            consumer.subscribe(topic_names)
             consumer_records = consumer.poll(0)
             expect(consumer_records).to be_empty
           end
