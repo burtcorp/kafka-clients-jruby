@@ -123,7 +123,7 @@ module Kafka
             double(:partitioner, close: nil, partition: nil)
           end
 
-          it 'calls #close on the partitioner', pending: 'KafkaProducer never calls #close on partitioners' do
+          it 'calls #close on the partitioner' do
             producer.close
             expect(partitioner).to have_received(:close)
           end
