@@ -133,7 +133,14 @@ public class KafkaClientsLibrary implements Library {
           kafkaConfig.put(ENCODING_CONFIG, value);
         }
       } else if (!value.isNil()) {
-        kafkaConfig.put(key.asJavaString(), value.asString().asJavaString());
+        String valueString;
+        if (value instanceof RubyArray) {
+          Ruby runtime = config.getRuntime();
+          valueString = value.convertToArray().join(runtime.getCurrentContext(), runtime.newString(",")).asJavaString();
+        } else {
+          valueString = value.asString().asJavaString();
+        }
+        kafkaConfig.put(key.asJavaString(), valueString);
       }
     }
     kafkaConfig.put(RUNTIME_CONFIG, config.getRuntime());
