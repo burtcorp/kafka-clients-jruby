@@ -219,10 +219,14 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(name = "commit_sync", optional = 1)
   public IRubyObject commitSync(ThreadContext ctx, IRubyObject[] args) {
-    if (args.length == 0) {
-      kafkaConsumer.commitSync();
-    } else {
-      kafkaConsumer.commitSync(toOffsets(ctx, args[0]));
+    try {
+      if (args.length == 0) {
+        kafkaConsumer.commitSync();
+      } else {
+        kafkaConsumer.commitSync(toOffsets(ctx, args[0]));
+      }
+    } catch (KafkaException ke) {
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
     }
     return ctx.runtime.getNil();
   }
