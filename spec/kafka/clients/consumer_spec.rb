@@ -454,6 +454,21 @@ module Kafka
         end
       end
 
+      describe '#committed' do
+        include_context 'records'
+
+        before do
+          consumer.poll(0)
+          consumer.commit_sync
+        end
+
+        it 'returns the committed offsets' do
+          expect(consumer.committed(TopicPartition.new('toptopic', 0)).offset).to eq(19)
+          expect(consumer.committed(TopicPartition.new('toptopic', 1)).offset).to eq(17)
+          expect(consumer.committed(TopicPartition.new('toptopic', 2)).offset).to eq(18)
+        end
+      end
+
       describe '#position' do
         include_context 'records'
 
