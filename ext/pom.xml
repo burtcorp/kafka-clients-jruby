@@ -10,7 +10,7 @@
   <description>Kafka clients for JRuby</description>
 
   <properties>
-    <kafka.version>0.10.0.1</kafka.version>
+    <kafka.version>0.10.2.0</kafka.version>
     <jruby.version>1.7.25</jruby.version>
   </properties>
 

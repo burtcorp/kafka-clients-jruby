@@ -2,6 +2,6 @@
 
 module Kafka
   module Clients
-    VERSION = '1.0.0.pre3'
+    VERSION = '1.0.0.pre5'
   end
 end

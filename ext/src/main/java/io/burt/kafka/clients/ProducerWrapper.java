@@ -135,6 +135,8 @@ public class ProducerWrapper extends RubyObject {
       }
     } catch (IllegalArgumentException iae) {
       throw ctx.runtime.newArgumentError(iae.getMessage());
+    } catch (KafkaException ke) {
+      throw ctx.runtime.newRuntimeError(ke.getMessage());
     }
     return FutureWrapper.create(ctx.runtime, resultFuture, new FutureWrapper.Rubifier<RecordMetadata>() {
       @Override

@@ -219,10 +219,14 @@ public class ConsumerWrapper extends RubyObject {
 
   @JRubyMethod(name = "commit_sync", optional = 1)
   public IRubyObject commitSync(ThreadContext ctx, IRubyObject[] args) {
-    if (args.length == 0) {
-      kafkaConsumer.commitSync();
-    } else {
-      kafkaConsumer.commitSync(toOffsets(ctx, args[0]));
+    try {
+      if (args.length == 0) {
+        kafkaConsumer.commitSync();
+      } else {
+        kafkaConsumer.commitSync(toOffsets(ctx, args[0]));
+      }
+    } catch (KafkaException ke) {
+      throw KafkaClientsLibrary.newRaiseException(ctx.runtime, ke);
     }
     return ctx.runtime.getNil();
   }
@@ -250,6 +254,21 @@ public class ConsumerWrapper extends RubyObject {
       kafkaConsumer.commitAsync(toOffsets(ctx, args[0]), commitCallback);
     }
     return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod(required = 1, optional = 1)
+  public IRubyObject committed(ThreadContext ctx, IRubyObject[] args) {
+    TopicPartition tp = TopicPartitionWrapper.toTopicPartition(ctx, args);
+    try {
+      OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
+      if (committedOffset != null) {
+        return OffsetAndMetadataWrapper.create(ctx.runtime, committedOffset);
+      } else {
+        return ctx.runtime.getNil();
+      }
+    } catch (IllegalArgumentException iae) {
+      throw ctx.runtime.newArgumentError(iae.getMessage());
+    }
   }
 
   @JRubyMethod(required = 1, optional = 1)

@@ -52,6 +52,18 @@ module Kafka
         end
       end
 
+      context 'and bootstrap.servers is used' do
+        context 'and the value is an array' do
+          let :config do
+            {'bootstrap.servers' => %w[lolcathost:4444 example.com:5555]}
+          end
+
+          it 'joins the array with comma' do
+            expect(kafka_config).to include('bootstrap.servers' => 'lolcathost:4444,example.com:5555')
+          end
+        end
+      end
+
       context 'and :group_id is used' do
         let :config do
           {:group_id => 'kafkatron'}
