@@ -49,7 +49,8 @@ public class KafkaClientsLibrary implements Library {
   private void installErrors(Ruby runtime, RubyModule parentModule) {
     RubyClass standardErrorClass = runtime.getStandardError();
     RubyClass kafkaErrorClass = parentModule.defineClassUnder("KafkaError", standardErrorClass, standardErrorClass.getAllocator());
-    parentModule.defineClassUnder("ApiError", kafkaErrorClass, standardErrorClass.getAllocator());
+    RubyClass apiErrorClass = parentModule.defineClassUnder("ApiError", kafkaErrorClass, standardErrorClass.getAllocator());
+    parentModule.defineClassUnder("RetriableError", apiErrorClass, standardErrorClass.getAllocator());
   }
 
   static RubyClass mapErrorClass(Ruby runtime, Throwable t) {

@@ -19,6 +19,13 @@ module Kafka
       end
     end
 
+    it 'makes RetriableExceptions subclasses of RetriableError' do
+      aggregate_failures do
+        expect(described_class::DisconnectError.ancestors).to include(described_class::RetriableError)
+        expect(described_class::InvalidMetadataError.ancestors).to include(described_class::RetriableError)
+      end
+    end
+
     it 'does not generate an error class when there is no corresponding error in Kafka' do
       expect { described_class::FuzzBazzError }.to raise_error(NameError)
     end

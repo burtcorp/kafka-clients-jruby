@@ -1,6 +1,7 @@
 package io.burt.kafka.clients;
 
 import org.apache.kafka.common.errors.ApiException;
+import org.apache.kafka.common.errors.RetriableException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -40,7 +41,9 @@ public class KafkaClients {
         try {
           Class<?> exceptionClass = Class.forName(String.format("%s.%s", packageName, javaName));
           String baseClassName = "Kafka::Clients::KafkaError";
-          if (ApiException.class.isAssignableFrom(exceptionClass)) {
+          if (RetriableException.class.isAssignableFrom(exceptionClass)) {
+            baseClassName = "Kafka::Clients::RetriableError";
+          } else if (ApiException.class.isAssignableFrom(exceptionClass)) {
             baseClassName = "Kafka::Clients::ApiError";
           }
           return module.defineClassUnder(rubyName, (RubyClass) ctx.runtime.getClassFromPath(baseClassName), ctx.runtime.getStandardError().getAllocator());
