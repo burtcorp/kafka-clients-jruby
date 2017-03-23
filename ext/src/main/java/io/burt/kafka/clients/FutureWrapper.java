@@ -77,7 +77,7 @@ public class FutureWrapper<T> extends RubyObject implements Future<IRubyObject> 
     long timeout = -1;
     if (args.length > 0) {
       RubyHash options = args[0].convertToHash();
-      IRubyObject timeoutOption = options.fastARef(ctx.runtime.newString("timeout"));
+      IRubyObject timeoutOption = options.fastARef(ctx.runtime.newSymbol("timeout"));
       if (timeoutOption!= null && !timeoutOption.isNil()) {
         timeout = (long) Math.floor(timeoutOption.convertToFloat().getDoubleValue() * 1000);
       }
