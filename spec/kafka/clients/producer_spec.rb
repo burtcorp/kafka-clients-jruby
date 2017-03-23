@@ -145,6 +145,11 @@ module Kafka
               expect(metadata.serialized_value_size).to be_a(Fixnum)
             end
           end
+
+          it 'raises a timeout if operation takes longer time than timeout option' do
+            future = producer.send('toptopic', 0, time, 'hello', 'world')
+            expect { future.get(timeout: 0.1) }.to raise_error(Kafka::Clients::TimeoutError)
+          end
         end
 
         it 'accepts a block that will be called when the record has been saved' do
