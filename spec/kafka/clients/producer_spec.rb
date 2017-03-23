@@ -148,7 +148,7 @@ module Kafka
 
           it 'raises a timeout if operation takes longer time than timeout option' do
             future = producer.send('toptopic', 0, time, 'hello', 'world')
-            expect { future.get(timeout: 0.1) }.to raise_error(Timeout::Error)
+            expect { future.get(timeout: 0.1) }.to raise_error(Kafka::Clients::TimeoutError)
           end
         end
 
