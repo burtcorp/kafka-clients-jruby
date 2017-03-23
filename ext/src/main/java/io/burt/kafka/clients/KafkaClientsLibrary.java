@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
+import java.util.concurrent.TimeoutException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -58,6 +59,8 @@ public class KafkaClientsLibrary implements Library {
       String javaName = t.getClass().getSimpleName();
       String rubyName = javaName.substring(0, javaName.length() - 9) + "Error";
       return (RubyClass) runtime.getClassFromPath(String.format("Kafka::Clients::%s", rubyName));
+    } else if (t instanceof TimeoutException) {
+      return (RubyClass) runtime.getModule("Timeout").getConstant("Error");
     } else {
       return runtime.getStandardError();
     }
