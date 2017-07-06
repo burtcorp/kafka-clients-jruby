@@ -57,7 +57,7 @@ public class OffsetAndMetadataWrapper extends RubyObject {
     this.offset = args[0];
     this.metadata = args.length > 1 ? args[1] : ctx.runtime.getNil();
     this.offsetAndMetadata = new OffsetAndMetadata(
-      (int) offset.convertToInteger().getLongValue(),
+      offset.convertToInteger().getLongValue(),
       this.metadata.isNil() ? null : this.metadata.convertToString().asJavaString()
     );
     return this;

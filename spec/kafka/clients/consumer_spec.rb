@@ -340,13 +340,13 @@ module Kafka
             offsets = {
               TopicPartition.new('toptopic', 0) => OffsetAndMetadata.new(0),
               TopicPartition.new('toptopic', 1) => OffsetAndMetadata.new(1),
-              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(4),
+              TopicPartition.new('toptopic', 2) => OffsetAndMetadata.new(2**33),
             }
             consumer.commit_sync(offsets)
             aggregate_failures do
               expect(kafka_consumer.committed(kafka_partitions[0]).offset).to eq(0)
               expect(kafka_consumer.committed(kafka_partitions[1]).offset).to eq(1)
-              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(4)
+              expect(kafka_consumer.committed(kafka_partitions[2]).offset).to eq(2**33)
             end
           end
 
